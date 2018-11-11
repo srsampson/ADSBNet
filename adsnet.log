@@ -4,11 +4,11 @@ The format is:
 
 1 TRK (String)
 2 Station ID (Long) Random number
-3 SQL Date/Time
+3 SQL Date/Time (String)
 4 Aircraft ICAO (String)
 5 Callsign transmitted (String)
 6 Mode-3 Squawk (String) 4-Digit Octal 0-leading
-7 Verical Rate (Integer)
+7 Vertical Rate (Integer)
 8 GroundTrack (Float)
 9 GroundSpeed (Float)
 10 Altitude (Integer)
