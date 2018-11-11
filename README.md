@@ -14,7 +14,7 @@ a radio network, or across the Internet.
 
 It also allows configured multiple hosts to receive the data. This reduced data flow can be used by multiple applications.
 
-ADSNet send ASCII data using UDP protocol in both Unicast mode, and Multicast mode. Unicast mode is normally sent to Internet or radio modems using port 30339. Multicast mode uses port 31090 on multicast address 239.192.10.90 only on your LAN. These addresses were pretty much picked at random.
+ADSNet sends ASCII data using UDP protocol in both Unicast mode, and Multicast mode. Unicast mode is normally sent to Internet or radio modems using port 30339. Multicast mode uses port 31090 on multicast address 239.192.10.90 only on your LAN. These addresses were pretty much picked at random.
 
 ##### ADSNet Overview
 The Basestation TCP port has ASCII text output representing target detections in real time. The TCP port data is quite redundant, and would require a lot of bandwidth to transmit over the internet.
