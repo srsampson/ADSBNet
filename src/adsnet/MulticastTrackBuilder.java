@@ -9,7 +9,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.sql.Timestamp;
-import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class is a thread that outputs track objects which have been updated to
@@ -65,7 +65,7 @@ public final class MulticastTrackBuilder extends Thread {
     @Override
     public void run() {
         Timestamp sqlTime = new Timestamp(0L);
-        List<Track> values;
+        CopyOnWriteArrayList<Track> values;
         String acid;
         String trkstr;
 
@@ -73,14 +73,8 @@ public final class MulticastTrackBuilder extends Thread {
             values = process.getTrackUpdatedHashTable(); // remember, this is only a copy of the track queue
 
             if (values.size() > 0) {
-                /*
-                 * First clear the updated flag on all the tracks and put a copy in the WAN table
-                 */
-
                 for (Track id : values) {
                     acid = id.getAircraftID();
-                    id.setUpdated(false);
-                    process.putTrackReportsVal(acid, id); // write back to track queue to flip updated flag
 
                     process.putWANQueueVal(acid, id);   // write to WAN users (unicast) (if any)
 

@@ -5,9 +5,9 @@ package adsnet;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -136,7 +136,7 @@ public final class GUI extends javax.swing.JFrame {
             now = zulu.getUTCTime() / 1000L;   // seconds
 
             try {
-                List<Beat> sites = process.getBeatHashTable();
+                CopyOnWriteArrayList<Beat> sites = process.getBeatHashTable();
                 int row = 0;
 
                 DefaultTableModel ttm = (DefaultTableModel) jTable1.getModel();
@@ -195,7 +195,7 @@ public final class GUI extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("ADSNet 1.82");
+        setTitle("ADSNet 1.83");
         setBounds(new java.awt.Rectangle(300, 300, 0, 0));
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {

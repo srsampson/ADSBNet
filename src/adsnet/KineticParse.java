@@ -13,12 +13,11 @@ import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This is a thread that reads the Kinetic Format TCP data.
@@ -172,8 +171,8 @@ public final class KineticParse extends Thread {
      */
     private class UpdateReports extends TimerTask {
 
-        List<Track> idRpt;
-        List<Beat> beatRpt;
+        CopyOnWriteArrayList<Track> idRpt;
+        CopyOnWriteArrayList<Beat> beatRpt;
 
         @Override
         public void run() {
@@ -213,10 +212,9 @@ public final class KineticParse extends Thread {
      */
     private class UpdateTrackQuality extends TimerTask {
 
-        private List<Track> idRpt;
+        private CopyOnWriteArrayList<Track> idRpt;
         private long delta;
         private long currentTime;
-        private Track id;
 
         @Override
         public void run() {
@@ -276,8 +274,8 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the Track objects
      */
-    public List getTrackHashTable() {
-        List<Track> result = new ArrayList<>();
+    public CopyOnWriteArrayList getTrackHashTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track trk : trackReports.values()) {
             result.add(trk);
@@ -291,8 +289,8 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the Local Track objects
      */
-    public List getTrackLocalHashTable() {
-        List<Track> result = new ArrayList<>();
+    public CopyOnWriteArrayList getTrackLocalHashTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if (id.getTrackType() == Track.TRACK_LOCAL) {
@@ -308,11 +306,14 @@ public final class KineticParse extends Thread {
      *
      * @return vector containing a copy of the modified Track objects
      */
-    public List getTrackUpdatedHashTable() {
-        List<Track> result = new ArrayList<>();
+    public CopyOnWriteArrayList getTrackUpdatedHashTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if (id.getUpdated() == true) {
+                // reset the update boolean
+                
+                id.setUpdated(false);
                 result.add(id);
             }
         }
@@ -325,11 +326,14 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the modified Track objects
      */
-    public List getLocalTrackUpdatedHashTable() {
-        List<Track> result = new ArrayList<>();
+    public CopyOnWriteArrayList getLocalTrackUpdatedHashTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_LOCAL)) {
+                // reset the update boolean
+                
+                id.setUpdated(false);
                 result.add(id);
             }
         }
@@ -342,11 +346,14 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the modified REMOTE Track objects
      */
-    public List getRemoteTrackUpdatedHashTable() {
-        List<Track> result = new ArrayList<>();
+    public CopyOnWriteArrayList getRemoteTrackUpdatedHashTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_REMOTE)) {
+                // reset the update boolean
+                
+                id.setUpdated(false);
                 result.add(id);
             }
         }
@@ -422,8 +429,8 @@ public final class KineticParse extends Thread {
      *
      * @return a vector Representing heartbeat table entries
      */
-    public List getBeatHashTable() {
-        List<Beat> result = new ArrayList<>();
+    public CopyOnWriteArrayList getBeatHashTable() {
+        CopyOnWriteArrayList<Beat> result = new CopyOnWriteArrayList<>();
 
         for (Beat id : beatReports.values()) {
             result.add(id);
@@ -488,8 +495,8 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the Track objects
      */
-    public List getWANQueueTable() {
-        List<Track> result = new ArrayList<>();
+    public CopyOnWriteArrayList getWANQueueTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : wanqueue.values()) {
             result.add(id);
@@ -1150,7 +1157,7 @@ public final class KineticParse extends Thread {
             }
 
             try {
-                Thread.sleep(10L);
+                Thread.sleep(50L);
             } catch (InterruptedException e) {
             }
         }

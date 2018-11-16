@@ -9,9 +9,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class sends track objects to remote Participant Units (PU). It only
@@ -96,7 +96,7 @@ public final class UnicastTrackBuilder extends Thread {
     @Override
     public void run() {
         Timestamp sqlTime = new Timestamp(0L);
-        List<Track> values;
+        CopyOnWriteArrayList<Track> values;
         InetAddress ip;
         String acid;
         long now, last;
