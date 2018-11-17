@@ -1,16 +1,28 @@
 #### ADSNet
-This Java 11 server listens on a TCP port for Basestation compatible data (127.0.0.1 Port 30003 by default). I've been working with modesdeco2 with an RTL SDR and modesmixer2 with beast-splitter and a Mode-S Beast receiver.
+This Java 11 server listens on a TCP port for Basestation compatible data (127.0.0.1 Port 30003 by default).
 
-It then decodes the data into target reports and outputs them to the settable Multicast UDP address and port. Also, you can specify a Unicast UDP address and port, and send the data anywhere in the world, and also specify the data update rate.
+I've been working with modesdeco2 with an RTL SDR and modesmixer2 with beast-splitter and a Mode-S Beast receiver.
 
-This was originally designed for Java in 2010, and I am updating it for Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue.
+I have a Raspberry PI in the rafters with Power Over Ethernet (POE), and it has a Mode-S Beast receiver plugged in. I'm using the ```beast-splitter``` program to read the USB serial port data. Then I use ```modesmixer2``` to convert that to Basestation Port 30003.
+```
+nohup sudo beast-splitter --serial /dev/beast --listen 30005:R &
+nohup ./modesmixer2 --location 34.382901:-98.423287 --outServer msg:30003 --inConnect 127.0.0.1:30005&
+```
+If I use the RTL SDR receiver (which doesn't work half as well as the Beast), you can use something like this:
+```
+nohup sudo ./modesdeco2 --location 34.382901:-98.423287 --msg 30003&
+```
+In that case, you don't need the ```beast-splitter``` or ```modesmixer2```.
+
+The ADSNet then decodes the noisy data into target reports, and outputs them to the settable Multicast address and UDP port. Also, you can optionally specify a Unicast address and UDP port, and send the data anywhere in the world, and also specify the data update rate. This was a main feature of the program, in which to share your data with others.
+
+This program was originally designed for Java in 2010, and I have recently updated it for Oracle Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue.
 
 ##### Theory 
 The Kinetic Basestation TCP port has a lot of data that is not necessary across the Internet, or even across a local radio
 based LAN. It requires a lot of bandwidth.
 
-ADSNet is for lowering the data rate, and filtering the data so that it is more efficient over
-a radio network, or across the Internet.
+ADSNet is for lowering the data rate, and filtering the data so that it is more efficient over a radio network, or across the Internet.
 
 It also allows configured multiple hosts to receive the data. This reduced data flow can be used by multiple applications.
 
@@ -24,7 +36,6 @@ What is needed is a shim that groups this data into tracks, and then transmits t
 A local user may have multiple workstations on their network. It would be inconvenient and a waste of time and bandwidth to transmit all the tracks one by one to each workstation. Thus, a multicast port is used to broadcast the data once to all workstations simultaneously.
 
 The multicast data is sent as quickly as the tracks are updated. The remote internet hosts of the data have to be specified in the configuration file. You can also specify the cycle time. For example, you can set the cycle time to 0 seconds (default), and the track data that has changed in the last second is transmitted over this unicast network. ADSNet only uses UDP protocol data format. This is a fire and forget broadcast data mode. The remote users don’t have to connect, nor do they have to acknowledge receipt. If they don’t get the data, or parts are corrupt, then the data is dropped until the next cycle.
-
 ```
                       +----------+
 (TCP Port 30003)----->| ADS Net  |<------->(UDP Ucast Port 30339 WAN)
@@ -34,17 +45,14 @@ The multicast data is sent as quickly as the tracks are updated. The remote inte
                       |          |           Processed ADS-B Tracks
                       +----------+
 ```
-
 The ```multicast.nicaddress``` line in the config file is needed only on computers that have multiple network interface cards (NIC), or multiple virtual networks. For example, you might have both a wireless and a gigabit interface.
 
 If more than one NIC is enabled, the software has no way of knowing which one you want to use. By specifying the IP address of the card you want to use, then configures the multicast packets to go out via that NIC.
 
 For example, if you have a Wireless card that you want to send multicast packets out, and it has IP address ```192.168.0.195```, and a gigabit network card on the same computer at IP address ```192.168.1.200```, then the configuration file should have the following entry:
-
 ```
 multicast.nicaddress = 192.168.0.195
 ```
-
 Which specifies that the multicast packets will go out the wireless network. Note, if you don’t specify the multicast port or the address, then it will default to IP address 239.192.10.90 and UDP Port 31090 (which both have 1090 in there, to help jog your memory).
 
 If you don’t specify a ```multicast.nicaddress``` it will default to the first network in your stack. There is no way to shut it off. When in doubt, or problems develop, always set this parameter. It can’t hurt.
@@ -52,13 +60,11 @@ If you don’t specify a ```multicast.nicaddress``` it will default to the first
 The unicast network lets you specify a list of comma separated hostnames or IP addresses to send the data to. It repeats the data to each host, one after the other. It also lets you specify the port and the cycle time.
 
 The default UDP port is 30339, and the default cycle time is 0 seconds. That means the track table will collect data changes for 1 second, and then transmit all the tracks that had any item change. If nothing changed, the track data is not sent. (note, these hostnames and ip addresses are imaginary).
-
 ```
 #unicast.address = site21.faa.gov:n,island33.faa.gov:y,137.21.44.200:n
 #unicast.port = 30339
 #unicast.seconds = 0
 ```
-
 If you don’t specify a unicast.address then the unicast transmit port is not used. The receiver will still remain enabled however. Thus you can be receive only.
 
 The “:y” and “:n” in the host names signify that you want to send all tracks (“:y”), or just local tracks (“:n”). This is useful if you have a friend who wants to see all your tracks that you have merged from other sites. This user will no doubt be receive only, because otherwise he would also receive their tracks in return.
@@ -67,7 +73,6 @@ The “:y” and “:n” in the host names signify that you want to send all tr
 Currently, the ADSNet program outputs two types of data: TRK and STA. The TRK is Track Data, and the STA is Station Data, or the Heartbeat. Each line is terminated with a CR, LF.
 
 The TRK line has the following fields:
-
 ```
 HomeID          A 64-bit random number to identify the transmit host
 Timestamp       A SQL Timestamp containing date and time
@@ -86,9 +91,7 @@ SPI             The SPI Boolean, means the crew has pressed the Ident button -1 
 OnGround        The OnGround Boolean, means the aircraft is on the ground -1 = true
 TrackQuality    The Track quality 0 to 9, with 9 being best.
 ```
-
 The STA heartbeat has the following fields sent every 30 seconds:
-
 ```
 HomeID          A 64-bit random number to identify the transmit host
 Timestamp       A SQL Timestamp containing date and time
