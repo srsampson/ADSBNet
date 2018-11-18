@@ -1,5 +1,5 @@
 #### ADSNet
-This Java 11 server listens on a TCP port for Basestation compatible data (127.0.0.1 Port 30003 by default).
+This Java 11 track server listens on a TCP port for Basestation compatible data, and sends target reports over UDP Multicast and Unicast ports to local and remote listeners..
 
 I've been working with modesdeco2 with an RTL SDR and modesmixer2 with beast-splitter and a Mode-S Beast receiver.
 
