@@ -14,7 +14,7 @@ nohup sudo ./modesdeco2 --location 34.382901:-98.423287 --msg 30003&
 ```
 In that case, you don't need the ```beast-splitter``` or ```modesmixer2```.
 
-The ADSNet then decodes the noisy data into target reports, and outputs them to the settable Multicast address and UDP port. Also, you can optionally specify a Unicast address and UDP port, and send the data anywhere in the world, and also specify the data update rate. This was a main feature of the program, in which to share your data with others.
+The ADSNet then decodes the noisy data into target reports, and outputs them to the configurable Multicast address and UDP port. Also, you can optionally specify a Unicast address and UDP port, and send the data anywhere in the world, and also specify the data update rate. This was a main feature of the program, in which to share your data with others.
 
 This program was originally designed for Java in 2010, and I have recently updated it for Oracle Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue.
 
