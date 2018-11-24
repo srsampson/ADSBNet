@@ -29,7 +29,7 @@ This program was originally designed for Java in 2010, and I have recently updat
 
 ##### Theory 
 The Kinetic Basestation TCP port has a lot of data that is not necessary across the Internet, or even across a local radio
-based LAN. It requires a lot of bandwidth.
+based LAN. It requires a lot of bandwidth. Back in the early days there was no good way to share data, so I came up with this port 30003 Basestation sharing application. Obviously things are different now, but there are some people still using this to share data privately, and not have to install huge amounts of software.
 
 ADSNet is for lowering the data rate, and filtering the data so that it is more efficient over a radio network, or across the Internet.
 
