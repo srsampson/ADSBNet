@@ -13,6 +13,10 @@ I have a Raspberry PI in the rafters with Power Over Ethernet (POE), and it has 
 nohup sudo beast-splitter --serial /dev/beast --listen 30005:R &
 nohup ./modesmixer2 --location 34.382901:-98.423287 --outServer msg:30003 --inConnect 127.0.0.1:30005&
 ```
+If you don't want to use beast-splitter you can add an option to modesmixer2:
+```
+nohup ./modesmixer2 --location 34.382901:-98.423287 --outServer msg:30003 --inSerial /dev/beast:3000000 &
+```
 If I use the RTL SDR receiver (which doesn't work half as well as the Beast), you can use something like this:
 ```
 nohup sudo ./modesdeco2 --location 34.382901:-98.423287 --msg 30003&
