@@ -11,7 +11,7 @@ I have a Raspberry PI in the rafters with Power Over Ethernet (POE), and it has 
 nohup sudo beast-splitter --serial /dev/beast --listen 30005:R &
 nohup ./modesmixer2 --location 34.382901:-98.423287 --outServer msg:30003 --inConnect 127.0.0.1:30005&
 ```
-If you don't want to use beast-splitter you can add an option to modesmixer2, however this decoder doesn't decode altitude or air to air packets (buggy):
+If you don't want to use beast-splitter you can add a serial option to modesmixer2:
 ```
 nohup ./modesmixer2 --location 34.382:-98.423 --outServer msg:30003 --inSerial /dev/ttyUSB0:3000000 &
 ```
