@@ -78,6 +78,8 @@ If you don’t specify a unicast.address then the unicast transmit port is not u
 
 The “:y” and “:n” in the host names signify that you want to send all tracks (“:y”), or just local tracks (“:n”). This is useful if you have a friend who wants to see all your tracks that you have merged from other sites. This user will no doubt be receive only, because otherwise he would also receive their tracks in return.
 
+If you don't want the GUI to display, you can switch it off in the ```adsnet.config``` file by setting ```gui.enable = false```. It is default true.
+
 ##### ADSNet Data output Format
 Currently, the ADSNet program outputs two types of data: TRK and STA. The TRK is Track Data, and the STA is Station Data, or the Heartbeat. Each line is terminated with a CR, LF.
 
