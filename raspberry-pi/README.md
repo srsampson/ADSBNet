@@ -1,5 +1,5 @@
 ##### Raspberry PI Version
-Unfortunately Java 8 is the latest version available for the ARM 32-bit CPU.
+Unfortunately Oracle Java 8 is the latest version available for the ARM 32-bit CPU.
 
 So I added this version for running it on a Raspberry Pi and doing the multicast from there.
 
