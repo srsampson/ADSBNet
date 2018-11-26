@@ -27,6 +27,7 @@ public final class MulticastTrackBuilder extends Thread {
     //
     private final MulticastSocket msocket;
     private final BufferedWriter logwriter;
+    private boolean shutdown;
 
     public MulticastTrackBuilder(Config c, MulticastSocket ms, KineticParse proc, BufferedWriter log) {
         this.config = c;
@@ -37,7 +38,13 @@ public final class MulticastTrackBuilder extends Thread {
         track = new Thread(this);
         track.setName("MulticastTrackBuilder");
         track.setPriority(Thread.NORM_PRIORITY);
+        
+        shutdown = false;
         track.start();
+    }
+
+    public void close() {
+        shutdown = true;
     }
 
     private void sendLAN(String data) {
@@ -69,7 +76,7 @@ public final class MulticastTrackBuilder extends Thread {
         String acid;
         String trkstr;
 
-        while (true) {
+        while (shutdown == false) {
             values = process.getTrackUpdatedHashTable(); // remember, this is only a copy of the track queue
 
             if (values.size() > 0) {

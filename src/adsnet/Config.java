@@ -30,6 +30,7 @@ public final class Config {
     private HostID[] unicastHost;
     private long unicastTime;
     private boolean multicastLog;
+    private boolean guienable;
     //
     private Properties Props;
     private String homeName;
@@ -55,6 +56,7 @@ public final class Config {
         unicastHostCount = 0;
         unicastTime = 1000L;
         multicastLog = false;
+        guienable = true;
         Props = null;
         homeName = "";
         homeLon = -97.0D;
@@ -117,6 +119,18 @@ public final class Config {
                 }
             }
 
+            temp = Props.getProperty("gui.enable");
+            if (temp == null) {
+                guienable = true;
+                System.out.println("GUI enable not set, set to true");
+            } else {
+                try {
+                    guienable = Boolean.parseBoolean(temp.trim());
+                } catch (Exception e) {
+                    guienable = true;
+                }
+            }
+            
             temp = Props.getProperty("socket.address");
             if (temp == null) {
                 socketIP = SOCKET_ADDRESS;
@@ -294,6 +308,15 @@ public final class Config {
         return multicastLog;
     }
 
+    /**
+     * Method to return the configuration GUI status
+     *
+     * @return a boolean Representing GUI being requested
+     */
+    public boolean getGUIEnable() {
+        return guienable;
+    }
+    
     /**
      * Method to return the configuration multicast host IP
      *

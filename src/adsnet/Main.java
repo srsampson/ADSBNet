@@ -15,16 +15,16 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 /**
- * Automatic Dependent Surveillance (ADS-B) Track Networker
+ * Automatic Dependent Surveillance (ADS-B) Track Feeder
  *
  * <p>
  * This software listens for target data on the Kinetic compatible socket and
  * builds tracks which are then sent out on specified unicast WAN hosts, and all
  * multicast LAN hosts.
  *
- * The networker uses UDP broadcasts for all transmitted tracks.
+ * Uses UDP broadcasts for all transmitted tracks.
  *
- * @version 1.84
+ * @version 1.85
  * @author Steve Sampson, November 2018
  */
 public final class Main {
@@ -32,6 +32,8 @@ public final class Main {
     private static DatagramSocket ds;
     private static MulticastSocket ms;
     //
+    private static MulticastTrackBuilder mtrack;
+    private static UnicastTrackBuilder utrack;
     private static KineticParse con;
     //
     private static String config = "adsnet.conf";
@@ -53,14 +55,16 @@ public final class Main {
 
         Locale.setDefault(Locale.US);
 
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException e) {
-            // Take whatever you get then
-        }
-
         c = new Config(config);
         System.out.println("Using config file: " + c.getOSConfPath());
+
+        if (c.getGUIEnable() == true) {
+            try {
+                UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException e) {
+                // Take whatever you get then
+            }
+        }
 
         if (c.getMulticastLog() == true) {
             try {
@@ -95,10 +99,13 @@ public final class Main {
         }
 
         try {
-            new MulticastTrackBuilder(c, ms, con, logwriter);
-            new UnicastTrackBuilder(c, ds, con);
+            mtrack = new MulticastTrackBuilder(c, ms, con, logwriter);
+            utrack = new UnicastTrackBuilder(c, ds, con);
         } catch (Exception e) {
             System.exit(-1);
         }
+        
+        Shutdown sh = new Shutdown(con, mtrack, utrack);
+        Runtime.getRuntime().addShutdownHook(sh);
     }
 }

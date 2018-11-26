@@ -12,7 +12,7 @@ import java.util.Random;
  *
  * @author Steve Sampson, May 2010
  */
-public class SiteID {
+public final class SiteID {
 
     protected long siteID;
     protected String siteName;

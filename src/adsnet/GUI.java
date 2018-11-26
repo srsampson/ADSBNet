@@ -3,8 +3,6 @@
  */
 package adsnet;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,7 +25,6 @@ public final class GUI extends javax.swing.JFrame {
     private final TimerTask task2;
     //
     private final KineticParse process;
-    private final BufferedWriter logwriter;
     //
     private static long messageType1;
     private static long messageType2;
@@ -39,9 +36,8 @@ public final class GUI extends javax.swing.JFrame {
     //
     private static long trackCount;
 
-    public GUI(KineticParse c, BufferedWriter log) {
+    public GUI(KineticParse c) {
         this.process = c;
-        this.logwriter = log;   // might be null
         
         initComponents();
         
@@ -63,8 +59,7 @@ public final class GUI extends javax.swing.JFrame {
         timer2.scheduleAtFixedRate(task2, 10L, RATE);
     }
 
-    @Override
-    public void finalize() {
+    public void close() {
         timer1.cancel();
         timer2.cancel();
     }
@@ -195,14 +190,9 @@ public final class GUI extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("ADSNet 1.84");
+        setTitle("ADSNet 1.85");
         setBounds(new java.awt.Rectangle(300, 300, 0, 0));
         setResizable(false);
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt) {
-                formWindowClosing(evt);
-            }
-        });
 
         jPanel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
@@ -488,16 +478,6 @@ public final class GUI extends javax.swing.JFrame {
         updateCountersDisplay();
     }//GEN-LAST:event_clearCounterButtonActionPerformed
 
-    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        process.setEOF(true);
-
-        if (this.logwriter != (BufferedWriter) null) {
-            try {
-                this.logwriter.close();
-            } catch (IOException e) {
-            }
-        }
-    }//GEN-LAST:event_formWindowClosing
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel air2air;
     private javax.swing.JLabel airborne;

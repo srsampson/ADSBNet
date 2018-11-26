@@ -61,7 +61,7 @@ public final class KineticParse extends Thread {
     //
     private final Thread socketReceive;
     //
-    private static boolean EOF;
+    private static boolean shutdown;
     private static boolean sbsStatus;
     //
     private final ConcurrentHashMap<String, Track> trackReports;
@@ -89,11 +89,11 @@ public final class KineticParse extends Thread {
      * @param l
      */
     public KineticParse(Config c, BufferedWriter l) {
-        this.config = c;
-        this.logwriter = l;
-        this.zulu = new ZuluMillis();
+        config = c;
+        logwriter = l;
+        zulu = new ZuluMillis();
 
-        EOF = false;
+        shutdown = false;
 
         try {
             socket = new DatagramSocket(config.getUnicastPort());
@@ -107,7 +107,12 @@ public final class KineticParse extends Thread {
         beatReports = new ConcurrentHashMap<>();
         wanqueue = new ConcurrentHashMap<>();
 
-        gui = new GUI(this, this.logwriter);
+        if (config.getGUIEnable() == true) {
+            gui = new GUI(this);
+        } else {
+            gui = null;
+        }
+
         openSocket();
 
         task1 = new UpdateReports();
@@ -124,9 +129,11 @@ public final class KineticParse extends Thread {
         socketReceive.start();
 
         /*
-         * Show the GUI
+         * Show the GUI if enabled
          */
-        gui.setVisible(true);
+        if (config.getGUIEnable() == true) {
+            gui.setVisible(true);
+        }
     }
 
     public boolean getSBSStatus() {
@@ -152,15 +159,16 @@ public final class KineticParse extends Thread {
     /**
      * Method to close down the network TCP interface
      */
-    public void closeSocket() {
+    private void closeSocket() {
         sbsStatus = false;
 
         try {
             line.close();
             input.close();
             connection.close();
+            socket.close();
         } catch (IOException e) {
-            System.err.println("KineticParse::close exception " + e.toString());
+            System.err.println("KineticParse::closeSocket exception " + e.toString());
         }
     }
 
@@ -247,26 +255,23 @@ public final class KineticParse extends Thread {
         }
     }
 
-    @Override
-    public void finalize() {
+    public void close() {
         timer1.cancel();
         timer2.cancel();
-    }
+        shutdown = true;
 
-    public void finish() {
-        try {
-            socket.close();
-        } catch (Exception e) {
-            System.err.println("KineticParse::finalyze Unable to close multicast socket " + e.toString());
+        if (this.logwriter != (BufferedWriter) null) {
+            try {
+                this.logwriter.close();
+            } catch (IOException e) {
+            }
         }
-    }
 
-    public void setEOF(boolean val) {
-        EOF = val;
-    }
+        if (config.getGUIEnable() == true) {
+            gui.close();
+        }
 
-    public boolean getEOF() {
-        return EOF;
+        closeSocket();
     }
 
     /**
@@ -406,7 +411,9 @@ public final class KineticParse extends Thread {
             System.err.println("KineticParse::putTrackReportsVal Exception during put " + e.toString());
         }
 
-        gui.setTrackCount(trackReports.size());
+        if (config.getGUIEnable() == true) {
+            gui.setTrackCount(trackReports.size());
+        }
     }
 
     /**
@@ -421,7 +428,9 @@ public final class KineticParse extends Thread {
             System.err.println("KineticParse::removeTrackReportsVal Exception during remove " + e.toString());
         }
 
-        gui.setTrackCount(trackReports.size());
+        if (config.getGUIEnable() == true) {
+            gui.setTrackCount(trackReports.size());
+        }
     }
 
     /**
@@ -747,11 +756,7 @@ public final class KineticParse extends Thread {
         String[] token;
         int type;
 
-        while (true) {
-            if (EOF) {
-                return;
-            }
-
+        while (shutdown == false) {
             /*
              * First, see if the remote PU's have anything
              */
@@ -803,7 +808,7 @@ public final class KineticParse extends Thread {
 
                                 altitude = -999;
                                 squawk = -999;
-                                
+
                                 switch (type) {
                                     case 1:
                                         try {
@@ -816,7 +821,10 @@ public final class KineticParse extends Thread {
                                         }
 
                                         id.setCallsign(callsign);
-                                        gui.incType1();
+
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType1();
+                                        }
                                         break;
                                     case 2:
                                         if (!token[ALTITUDE].trim().equals("")) {
@@ -889,17 +897,20 @@ public final class KineticParse extends Thread {
                                         }
 
                                         id.setOnGround(isOnGround);
-                                        gui.incType2();
+                                        
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType2();
+                                        }
                                         break;
                                     case 3:
                                         if (!token[ALTITUDE].trim().equals("")) {
                                             altitude = Integer.parseInt(token[ALTITUDE].trim());
-                                            
+
                                             if (altitude < 100) {
                                                 // this is probably bullcrap
                                                 altitude = -999; // mark it ignore
                                             }
-                                            
+
                                             id.setAltitude(altitude);
                                         }
 
@@ -995,7 +1006,10 @@ public final class KineticParse extends Thread {
 
                                         id.setOnGround(isOnGround);
                                         id.setAlert(alert, emergency, spi);
-                                        gui.incType3();
+                                        
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType3();
+                                        }
                                         break;
                                     case 4:
                                         if (!token[GSPEED].trim().equals("")) {
@@ -1013,7 +1027,9 @@ public final class KineticParse extends Thread {
                                             id.setVerticalRate(verticalRate);
                                         }
 
-                                        gui.incType4();
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType4();
+                                        }
                                         break;
                                     case 5:
                                         if (!token[ALTITUDE].trim().equals("")) {
@@ -1061,14 +1077,17 @@ public final class KineticParse extends Thread {
 
                                         id.setAlert(alert, false, spi);
                                         id.setOnGround(isOnGround);
-                                        gui.incType5();
+                                        
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType5();
+                                        }
                                         break;
                                     case 6:
                                         try {
                                             if (!token[ALTITUDE].trim().equals("")) {
                                                 altitude = Integer.parseInt(token[ALTITUDE].trim());
                                             }
-                                            
+
                                             if (altitude < 100) {
                                                 altitude = -999;
                                             }
@@ -1138,16 +1157,19 @@ public final class KineticParse extends Thread {
                                         id.setSquawk(squawk);
                                         id.setAlert(alert, emergency, spi);
                                         id.setOnGround(isOnGround);
-                                        gui.incType6();
+                                        
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType6();
+                                        }
                                         break;
                                     case 7:
                                         if (!token[ALTITUDE].trim().equals("")) {
                                             altitude = Integer.parseInt(token[ALTITUDE].trim());
-                                            
+
                                             if (altitude < 100) {
                                                 altitude = -999;
                                             }
-                                            
+
                                             id.setAltitude(altitude);
                                         }
 
@@ -1166,7 +1188,10 @@ public final class KineticParse extends Thread {
                                         }
 
                                         id.setOnGround(isOnGround);
-                                        gui.incType7();
+                                        
+                                        if (config.getGUIEnable() == true) {
+                                            gui.incType7();
+                                        }
                                 }
 
                                 id.setDetectedTime(currentTime);
@@ -1178,7 +1203,7 @@ public final class KineticParse extends Thread {
                     }
                 } catch (Exception e) {
                     System.err.print(data);
-                    System.err.println("KineticParse::run exception " + e.toString());
+                    System.err.println(" KineticParse::run exception " + e.toString());
                 }
             }
 

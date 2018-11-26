@@ -8,7 +8,7 @@ package adsnet;
  *
  *  @author Steve Sampson, May 2010
  */
-public class HeartBeat {
+public final class HeartBeat {
 
     private final ZuluMillis zulu = new ZuluMillis();
     private final long stationID;         // Station ID

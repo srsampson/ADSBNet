@@ -8,7 +8,7 @@ package adsnet;
  *
  * @author Steve Sampson, May 2010
  */
-public class Track {
+public final class Track {
 
     public final static int TRACK_UNKNOWN = 0;
     public final static int TRACK_LOCAL = 1;

@@ -47,6 +47,7 @@ public final class UnicastTrackBuilder extends Thread {
     private double homeLat;
     private double homeLon;
     private String homeName;
+    private boolean shutdown;
 
     public UnicastTrackBuilder(Config c, DatagramSocket ds, KineticParse proc) {
         this.config = c;
@@ -56,6 +57,7 @@ public final class UnicastTrackBuilder extends Thread {
 
         task = new HeartBeat();
         timer = new Timer();
+        shutdown = false;
 
         this.hostCount = config.getUnicastHostCount();
 
@@ -79,9 +81,9 @@ public final class UnicastTrackBuilder extends Thread {
         }
     }
 
-    @Override
-    public void finalize() {
+    public void close() {
         timer.cancel();
+        shutdown = true;
     }
 
     private synchronized void sendWAN(String data, InetAddress ip) {
@@ -104,7 +106,7 @@ public final class UnicastTrackBuilder extends Thread {
 
         last = zulu.getUTCTime();
 
-        while (true) {
+        while (shutdown == false) {
             now = zulu.getUTCTime();
 
             if (process.getWANQueueSize() > 0) {

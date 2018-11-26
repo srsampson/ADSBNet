@@ -11,7 +11,7 @@ import java.net.UnknownHostException;
  * 
  * @author Steve Sampson, May 2010
  */
-public class HostID {
+public final class HostID {
 
     private final String hostName;
     private final boolean localOnly;
