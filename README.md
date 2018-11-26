@@ -25,6 +25,8 @@ The ADSNet then decodes the noisy data into target reports, and outputs them to 
 
 This program was originally designed for Java in 2010, and I have recently updated it for Oracle Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue.
 
+Included is ```export-adsnet.zip``` which is a project export from Netbeans. Just import it in and away you go...
+
 ##### Theory 
 The Kinetic Basestation TCP port has a lot of data that is not necessary across the Internet, or even across a local radio
 based LAN. It requires a lot of bandwidth. Back in the early days there was no good way to share data, so I came up with this port 30003 Basestation sharing application. Obviously things are different now, but there are some people still using this to share data privately, and not have to install huge amounts of software.
