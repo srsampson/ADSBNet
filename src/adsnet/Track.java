@@ -47,10 +47,10 @@ public class Track {
         this.acid = "";
         this.siteID = 0L;
         this.siteIP = "";
-        this.groundSpeed = 0.0D;
-        this.groundTrack = 0.0D;
-        this.latitude = 0.0D;
-        this.longitude = 0.0D;
+        this.groundSpeed = 0.0;
+        this.groundTrack = 0.0;
+        this.latitude = 0.0;
+        this.longitude = 0.0;
         this.squawk = 0;
         this.verticalRate = 0;
         this.altitude = 0;

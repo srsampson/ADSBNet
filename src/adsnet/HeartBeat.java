@@ -1,5 +1,5 @@
 /**
- * Beat.java
+ * HeartBeat.java
  */
 package adsnet;
 
@@ -8,7 +8,7 @@ package adsnet;
  *
  *  @author Steve Sampson, May 2010
  */
-public class Beat {
+public class HeartBeat {
 
     private final ZuluMillis zulu = new ZuluMillis();
     private final long stationID;         // Station ID
@@ -22,7 +22,7 @@ public class Beat {
     private long beat_count;              // Number of heartbeats heard
     private long updateUTCTime;           // time object was updated
 
-    public Beat(String val1, long val2, double val3, double val4, long val5, long val6) {
+    public HeartBeat(String val1, long val2, double val3, double val4, long val5, long val6) {
         this.stationName = val1;
         this.stationID = val2;
         this.stationLat = val3;

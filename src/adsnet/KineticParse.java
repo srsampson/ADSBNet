@@ -65,7 +65,7 @@ public final class KineticParse extends Thread {
     private static boolean sbsStatus;
     //
     private final ConcurrentHashMap<String, Track> trackReports;
-    private final ConcurrentHashMap<Long, Beat> beatReports;
+    private final ConcurrentHashMap<Long, HeartBeat> beatReports;
     private final ConcurrentHashMap<String, Track> wanqueue;
     //
     private final Config config;
@@ -172,7 +172,7 @@ public final class KineticParse extends Thread {
     private class UpdateReports extends TimerTask {
 
         CopyOnWriteArrayList<Track> idRpt;
-        CopyOnWriteArrayList<Beat> beatRpt;
+        CopyOnWriteArrayList<HeartBeat> beatRpt;
 
         @Override
         public void run() {
@@ -192,7 +192,7 @@ public final class KineticParse extends Thread {
 
             beatRpt = getBeatHashTable();
 
-            for (Beat b : beatRpt) {
+            for (HeartBeat b : beatRpt) {
                 // find the beat reports that haven't been updated in 1 minute
                 delta = Math.abs(currentTime - b.getUpdateTime());
 
@@ -274,7 +274,7 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the Track objects
      */
-    public CopyOnWriteArrayList getTrackHashTable() {
+    public CopyOnWriteArrayList<Track> getTrackHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track trk : trackReports.values()) {
@@ -289,7 +289,7 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the Local Track objects
      */
-    public CopyOnWriteArrayList getTrackLocalHashTable() {
+    public CopyOnWriteArrayList<Track> getTrackLocalHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
@@ -306,13 +306,13 @@ public final class KineticParse extends Thread {
      *
      * @return vector containing a copy of the modified Track objects
      */
-    public CopyOnWriteArrayList getTrackUpdatedHashTable() {
+    public CopyOnWriteArrayList<Track> getTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if (id.getUpdated() == true) {
                 // reset the update boolean
-                
+
                 id.setUpdated(false);
                 result.add(id);
             }
@@ -326,13 +326,13 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the modified Track objects
      */
-    public CopyOnWriteArrayList getLocalTrackUpdatedHashTable() {
+    public CopyOnWriteArrayList<Track> getLocalTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_LOCAL)) {
                 // reset the update boolean
-                
+
                 id.setUpdated(false);
                 result.add(id);
             }
@@ -346,13 +346,13 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the modified REMOTE Track objects
      */
-    public CopyOnWriteArrayList getRemoteTrackUpdatedHashTable() {
+    public CopyOnWriteArrayList<Track> getRemoteTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : trackReports.values()) {
             if ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_REMOTE)) {
                 // reset the update boolean
-                
+
                 id.setUpdated(false);
                 result.add(id);
             }
@@ -429,10 +429,10 @@ public final class KineticParse extends Thread {
      *
      * @return a vector Representing heartbeat table entries
      */
-    public CopyOnWriteArrayList getBeatHashTable() {
-        CopyOnWriteArrayList<Beat> result = new CopyOnWriteArrayList<>();
+    public CopyOnWriteArrayList<HeartBeat> getBeatHashTable() {
+        CopyOnWriteArrayList<HeartBeat> result = new CopyOnWriteArrayList<>();
 
-        for (Beat id : beatReports.values()) {
+        for (HeartBeat id : beatReports.values()) {
             result.add(id);
         }
 
@@ -495,7 +495,7 @@ public final class KineticParse extends Thread {
      *
      * @return a vector containing a copy of the Track objects
      */
-    public CopyOnWriteArrayList getWANQueueTable() {
+    public CopyOnWriteArrayList<Track> getWANQueueTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
         for (Track id : wanqueue.values()) {
@@ -567,7 +567,7 @@ public final class KineticParse extends Thread {
                  * that already exists
                  */
                 if (beatReports.containsKey(stationID)) {
-                    Beat tmp = beatReports.get(stationID);
+                    HeartBeat tmp = beatReports.get(stationID);
                     tmp.setStationName(stationName);        // Probably the same
                     tmp.setStationIP(ip);
                     tmp.setUpdateTime(updateTime);
@@ -575,7 +575,7 @@ public final class KineticParse extends Thread {
                     tmp.setTrackCount(ntracks);
                     beatReports.put(stationID, tmp);
                 } else {
-                    beatReports.put(stationID, new Beat(stationName, stationID, stationLat, stationLon, diffTime, ntracks));
+                    beatReports.put(stationID, new HeartBeat(stationName, stationID, stationLat, stationLon, diffTime, ntracks));
                 }
             } else if (token[0].equals("TRK")) {
                 String acid = token[3].trim();
@@ -719,7 +719,7 @@ public final class KineticParse extends Thread {
         }
     }
 
-    /**
+    /*
      * Thread to wait for socket data and push decoded objects onto track queue
      */
     @Override
@@ -732,7 +732,7 @@ public final class KineticParse extends Thread {
         String temp;
         DatagramPacket dinput;
         String callsign;
-        int altitude = 0;
+        int altitude;
         int verticalRate;
         int squawk;
         int gnd;
@@ -801,6 +801,9 @@ public final class KineticParse extends Thread {
                                 id.setSiteID(config.getHomeID());
                                 id.setTrackType(Track.TRACK_LOCAL);
 
+                                altitude = -999;
+                                squawk = -999;
+                                
                                 switch (type) {
                                     case 1:
                                         try {
@@ -891,6 +894,12 @@ public final class KineticParse extends Thread {
                                     case 3:
                                         if (!token[ALTITUDE].trim().equals("")) {
                                             altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                            
+                                            if (altitude < 100) {
+                                                // this is probably bullcrap
+                                                altitude = -999; // mark it ignore
+                                            }
+                                            
                                             id.setAltitude(altitude);
                                         }
 
@@ -948,7 +957,7 @@ public final class KineticParse extends Thread {
                                             if (!temp.equals("")) {
                                                 gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (altitude == 0) || (gnd == -1);
+                                                isOnGround = (gnd == -1);
                                             } else {
                                                 isOnGround = false;
                                             }
@@ -1042,7 +1051,7 @@ public final class KineticParse extends Thread {
                                             if (!temp.equals("")) {
                                                 gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (altitude == 0) || (gnd == -1);
+                                                isOnGround = (gnd == -1);
                                             } else {
                                                 isOnGround = false;
                                             }
@@ -1055,14 +1064,24 @@ public final class KineticParse extends Thread {
                                         gui.incType5();
                                         break;
                                     case 6:
-                                        if (!token[ALTITUDE].trim().equals("")) {
-                                            altitude = Integer.parseInt(token[ALTITUDE].trim());
-                                            id.setAltitude(altitude);
+                                        try {
+                                            if (!token[ALTITUDE].trim().equals("")) {
+                                                altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                            }
+                                            
+                                            if (altitude < 100) {
+                                                altitude = -999;
+                                            }
+                                        } catch (Exception eg) {
+                                            altitude = -999;
                                         }
 
-                                        if (!token[SQUAWK].trim().equals("")) {
-                                            squawk = Integer.parseInt(token[SQUAWK].trim());
-                                            id.setSquawk(squawk);
+                                        try {
+                                            if (!token[SQUAWK].trim().equals("")) {
+                                                squawk = Integer.parseInt(token[SQUAWK].trim());
+                                            }
+                                        } catch (Exception eg) {
+                                            squawk = -999;
                                         }
 
                                         try {
@@ -1107,7 +1126,7 @@ public final class KineticParse extends Thread {
                                             if (!temp.equals("")) {
                                                 gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (altitude == 0) || (gnd == -1);
+                                                isOnGround = (gnd == -1);
                                             } else {
                                                 isOnGround = false;
                                             }
@@ -1115,6 +1134,8 @@ public final class KineticParse extends Thread {
                                             isOnGround = false;
                                         }
 
+                                        id.setAltitude(altitude);
+                                        id.setSquawk(squawk);
                                         id.setAlert(alert, emergency, spi);
                                         id.setOnGround(isOnGround);
                                         gui.incType6();
@@ -1122,6 +1143,11 @@ public final class KineticParse extends Thread {
                                     case 7:
                                         if (!token[ALTITUDE].trim().equals("")) {
                                             altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                            
+                                            if (altitude < 100) {
+                                                altitude = -999;
+                                            }
+                                            
                                             id.setAltitude(altitude);
                                         }
 
@@ -1131,7 +1157,7 @@ public final class KineticParse extends Thread {
                                             if (!temp.equals("")) {
                                                 gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (altitude == 0) || (gnd == -1);
+                                                isOnGround = (gnd == -1);
                                             } else {
                                                 isOnGround = false;
                                             }

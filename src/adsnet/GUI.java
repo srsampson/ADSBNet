@@ -136,13 +136,13 @@ public final class GUI extends javax.swing.JFrame {
             now = zulu.getUTCTime() / 1000L;   // seconds
 
             try {
-                CopyOnWriteArrayList<Beat> sites = process.getBeatHashTable();
+                CopyOnWriteArrayList<HeartBeat> sites = process.getBeatHashTable();
                 int row = 0;
 
                 DefaultTableModel ttm = (DefaultTableModel) jTable1.getModel();
                 ttm.setRowCount(process.getBeatReportsSize());
 
-                for (Beat site : sites) {
+                for (HeartBeat site : sites) {
                     ttm.setValueAt(" " + site.getStationName(), row, 0);
                     ttm.setValueAt(site.getBeatCount(), row, 1);
                     ttm.setValueAt(site.getTrackCount(), row, 2);
@@ -195,7 +195,7 @@ public final class GUI extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("ADSNet 1.83");
+        setTitle("ADSNet 1.84");
         setBounds(new java.awt.Rectangle(300, 300, 0, 0));
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {

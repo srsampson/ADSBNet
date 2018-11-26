@@ -24,7 +24,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  *
  * The networker uses UDP broadcasts for all transmitted tracks.
  *
- * @version 1.83
+ * @version 1.84
  * @author Steve Sampson, November 2018
  */
 public final class Main {
