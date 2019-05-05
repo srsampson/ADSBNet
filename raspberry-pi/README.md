@@ -6,4 +6,4 @@ So I added this version for running it on a Raspberry Pi and doing the multicast
 The GUI shows the status of your Unicast shares, and the Basestation Port data. However the display is optional, by
 using the ```gui.enable``` option setting in the ```adsnet.conf``` configuration file.
 
-![My image](https://raw.githubusercontent.com/srsampson/ADSNet/master/sample.png)
+![My image](https://raw.githubusercontent.com/srsampson/ADSNet/master/sample.png?token=AKW2NYZWV3LDW755PE47SHK4Z4UIO)
