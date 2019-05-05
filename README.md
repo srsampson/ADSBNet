@@ -41,21 +41,25 @@ What is needed is a shim that groups this data into tracks, and then transmits t
 
 A local user may have multiple workstations or laptops on their network. It would be inconvenient and a waste of time and bandwidth to transmit all the tracks one by one to each workstation. Thus, a multicast port is used to broadcast the data once to all computers simultaneously.
 
-The multicast data is sent as quickly as the tracks are updated. The remote internet hosts of the data have to be specified in the configuration file. You can also specify the cycle time. For example, you can set the cycle time to 0 seconds (default), and the track data that has changed in the last second is transmitted over this unicast network. To simulate a 6 RPM antenna rotation, you might specify a 10 second cycle time. Then the remote users will get track updates every 10 seconds, thus lowering the data rate even further.
+The really neat thing, if you use ZeroTier network then the multicast data can be sent worldwide.
+
+The multicast data is sent as quickly as the tracks are updated.
+
+The remote internet hosts of the data have to be specified in the configuration file. You can also specify the cycle time. For example, you can set the cycle time to 0 seconds (default), and the track data that has changed in the last second is transmitted over this unicast network. To simulate a 6 RPM antenna rotation, you might specify a 10 second cycle time. Then the remote users will get track updates every 10 seconds, thus lowering the data rate even further.
 
 ADSNet only uses UDP protocol data format. This is a fire and forget broadcast data mode. The remote users don’t have to connect, nor do they have to acknowledge receipt. If they don’t get the data, or parts are corrupt, then the data is dropped until the next cycle. I haven't needed an error correction or CRC data in my testing with European remote users.
 ```
                       +----------+
 (TCP Port 30003)----->| ADS Net  |<------->(UDP Ucast Port 30339 WAN)
                       |          |
-                      |          |-------->(UDP Mcast Port 31090 LAN)
+                      |          |-------->(UDP Mcast Port 31090 Local or ZeroTier LAN)
  RAW ADS-B Data       |          |
                       |          |           Processed ADS-B Tracks
                       +----------+
 ```
-The ```multicast.nicaddress``` line in the config file is needed only on computers that have multiple network interface cards (NIC), or multiple virtual networks. For example, you might have both a wireless and a gigabit interface.
+The ```multicast.nicaddress``` line in the config file is needed only on computers that have multiple network interface cards (NIC), or multiple virtual networks. For example, you might have a wireless, a gigabit interface, or a ZeroTier connection.
 
-If more than one NIC is enabled, the software has no way of knowing which one you want to use. By specifying the IP address of the card you want to use, then configures the multicast packets to go out via that NIC.
+If more than one NIC is enabled, the software has no way of knowing which one you want to use. By specifying the IP address of the card you want to use, then it configures the multicast packets to go out via that NIC.
 
 For example, if you have a Wireless card that you want to send multicast packets out, and it has IP address ```192.168.0.195```, and a gigabit network card on the same computer at IP address ```192.168.1.200```, then the configuration file should have the following entry:
 ```
@@ -110,6 +114,8 @@ HomeLatitude    The site latitude in degrees and fractions of degree (+ is north
 HomeLongitude   The site longitude in degrees and fractions of degree (+ is east)
 ```
 ##### Router Config
-There are many routers on the market, and it would be hard to give out procedures, but most have a feature called port forwarding, or virtual server. You must adjust your router to open up the firewall port for UDP Port 30339. Then you must configure the IP address where your ADSNet program is running. This will allow UDP packets to arrive on the WAN side of your router and pass unmolested to the LAN side and a particular machine. Also check if your router has a switch to enable multicast.
+There are many routers on the market, and it would be hard to give out procedures, but most have a feature called port forwarding, or virtual server. You must adjust your router to open up the firewall port for Unicast UDP Port 30339.
+
+Then you must configure the IP address where your ADSNet program is running. This will allow UDP packets to arrive on the WAN side of your router and pass unmolested to the LAN side and a particular machine. Also check if your router has a switch to enable multicast. If you are using ZeroTier Multicast, you don't need any port forwarding. The world is your LAN.
 
 If you are using a Public WiFi or a subsidized cost network in your home, then it might have UDP networking restricted. Many free or low cost networks drop this network data to prevent users from running servers.
