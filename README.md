@@ -41,8 +41,6 @@ What is needed is a shim that groups this data into tracks, and then transmits t
 
 A local user may have multiple workstations or laptops on their network. It would be inconvenient and a waste of time and bandwidth to transmit all the tracks one by one to each workstation. Thus, a multicast port is used to broadcast the data once to all computers simultaneously.
 
-The really neat thing, if you use ZeroTier network then the multicast data can be sent worldwide.
-
 The multicast data is sent as quickly as the tracks are updated.
 
 The remote internet hosts of the data have to be specified in the configuration file. You can also specify the cycle time. For example, you can set the cycle time to 0 seconds (default), and the track data that has changed in the last second is transmitted over this unicast network. To simulate a 6 RPM antenna rotation, you might specify a 10 second cycle time. Then the remote users will get track updates every 10 seconds, thus lowering the data rate even further.
@@ -57,7 +55,7 @@ ADSNet only uses UDP protocol data format. This is a fire and forget broadcast d
                       |          |           Processed ADS-B Tracks
                       +----------+
 ```
-The ```multicast.nicaddress``` line in the config file is needed only on computers that have multiple network interface cards (NIC), or multiple virtual networks. For example, you might have a wireless, a gigabit interface, or a ZeroTier connection.
+The ```multicast.nicaddress``` line in the config file is needed only on computers that have multiple network interface cards (NIC), or multiple virtual networks. For example, you might have a wireless and a gigabit interface.
 
 If more than one NIC is enabled, the software has no way of knowing which one you want to use. By specifying the IP address of the card you want to use, then it configures the multicast packets to go out via that NIC.
 
