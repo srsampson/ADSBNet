@@ -23,7 +23,7 @@ In this case, you don't need the ```beast-splitter``` or ```modesmixer2```.
 
 The ADSNet then decodes the noisy data into target reports, and outputs them to the configurable Multicast address and UDP port. Also, you can optionally specify a Unicast address and UDP port, and send the data anywhere in the world, and also specify the data update rate. This was a main feature of the program, in which to share your data with others.
 
-This program was originally designed for Java in 2010, and I have recently updated it for Oracle Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue.
+This program was originally designed for Java in 2010, and I have recently updated it for Oracle Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue. There's a Java 8 version in the Raspberry Pi directory.
 
 Included is ```export-adsnet.zip``` which is a project export from Netbeans. Just import it in and away you go...
 
@@ -41,16 +41,16 @@ What is needed is a shim that groups this data into tracks, and then transmits t
 
 A local user may have multiple workstations or laptops on their network. It would be inconvenient and a waste of time and bandwidth to transmit all the tracks one by one to each workstation. Thus, a multicast port is used to broadcast the data once to all computers simultaneously.
 
-The multicast data is sent as quickly as the tracks are updated.
+The multicast data is sent as quickly as the tracks are updated. It is designed for local use.
 
 The remote internet hosts of the data have to be specified in the configuration file. You can also specify the cycle time. For example, you can set the cycle time to 0 seconds (default), and the track data that has changed in the last second is transmitted over this unicast network. To simulate a 6 RPM antenna rotation, you might specify a 10 second cycle time. Then the remote users will get track updates every 10 seconds, thus lowering the data rate even further.
 
 ADSNet only uses UDP protocol data format. This is a fire and forget broadcast data mode. The remote users don’t have to connect, nor do they have to acknowledge receipt. If they don’t get the data, or parts are corrupt, then the data is dropped until the next cycle. I haven't needed an error correction or CRC data in my testing with European remote users.
 ```
                       +----------+
-(TCP Port 30003)----->| ADS Net  |<------->(UDP Ucast Port 30339 WAN)
+(TCP Port 30003)----->| ADS Net  |<------->(UDP Ucast Port 30339 WAN or ZeroTier LAN)
                       |          |
-                      |          |-------->(UDP Mcast Port 31090 Local or ZeroTier LAN)
+                      |          |-------->(UDP Mcast Port 31090 Local)
  RAW ADS-B Data       |          |
                       |          |           Processed ADS-B Tracks
                       +----------+
@@ -67,7 +67,7 @@ Which specifies that the multicast packets will go out the wireless network. Not
 
 If you don’t specify a ```multicast.nicaddress``` it will default to the first network in your stack. There is no way to shut it off. When in doubt, or problems develop, always set this parameter. It can’t hurt.
 
-The unicast network lets you specify a list of comma separated hostnames or IP addresses to send the data to. It repeats the data to each host, one after the other. It also lets you specify the port and the cycle time.
+The unicast network lets you specify a list of comma separated hostnames or IP addresses to send the data to. It repeats the data to each host, one after the other. It also lets you specify the port and the cycle time. You can use the Zerotier network IP's for private encrypted relay.
 
 The default UDP port is 30339, and the default cycle time is 0 seconds. That means the track table will collect data changes for 1 second, and then transmit all the tracks that had any item change. If nothing changed, the track data is not sent. (note, these hostnames and ip addresses are imaginary).
 ```
@@ -114,6 +114,6 @@ HomeLongitude   The site longitude in degrees and fractions of degree (+ is east
 ##### Router Config
 There are many routers on the market, and it would be hard to give out procedures, but most have a feature called port forwarding, or virtual server. You must adjust your router to open up the firewall port for Unicast UDP Port 30339.
 
-Then you must configure the IP address where your ADSNet program is running. This will allow UDP packets to arrive on the WAN side of your router and pass unmolested to the LAN side and a particular machine. Also check if your router has a switch to enable multicast. If you are using ZeroTier Multicast, you don't need any port forwarding. The world is your LAN.
+Then you must configure the IP address where your ADSNet program is running. This will allow UDP packets to arrive on the WAN side of your router and pass unmolested to the LAN side and a particular machine. Also check if your router has a switch to enable multicast. If you are using ZeroTier Unicast, you don't need any port forwarding.
 
 If you are using a Public WiFi or a subsidized cost network in your home, then it might have UDP networking restricted. Many free or low cost networks drop this network data to prevent users from running servers.
