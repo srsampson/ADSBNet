@@ -1,4 +1,4 @@
-#### ADSNet
+#### ADSBNet
 
 This Java track server listens on a TCP port 30003 for Basestation compatible data, and sends target reports over UDP Multicast and Unicast ports to local and remote listeners.
 
@@ -21,20 +21,20 @@ nohup sudo ./modesdeco2 --location 34.382901:-98.423287 --msg 30003&
 ```
 In this case, you don't need the ```beast-splitter``` or ```modesmixer2```.
 
-The ADSNet then decodes the noisy data into target reports, and outputs them to the configurable Multicast address and UDP port. Also, you can optionally specify a Unicast address and UDP port, and send the data anywhere in the world, and also specify the data update rate. This was a main feature of the program, in which to share your data with others.
+The ADSBNet then decodes the noisy data into target reports, and outputs them to the configurable Multicast address and UDP port. Also, you can optionally specify a Unicast address and UDP port, and send the data anywhere in the world, and also specify the data update rate. This was a main feature of the program, in which to share your data with others.
 
 This program was originally designed for Java in 2010, and I have recently updated it for Oracle Java 11. If you find any bugs, or would like to suggest a better way, feel free to add an issue. There's a Java 8 version in the Raspberry Pi directory.
 
-Included is ```export-adsnet.zip``` which is a project export from Netbeans. Just import it in and away you go...
+Included is ```export-adsbnet.zip``` which is a project export from Netbeans. Just import it in and away you go...
 
 ##### Theory 
 The Kinetic Basestation TCP port has a lot of redundant data that is not efficient across the Internet, or even across a local radio based LAN. It requires a lot of bandwidth. Back in the early days there was no good way to share data, so I came up with this port 30003 Basestation sharing application. Obviously things are different now, but there are some people still using this to share data privately, and not have to install huge amounts of software.
 
-ADSNet is for lowering the data rate, and filtering the data so that it is more efficient over a radio network, or across the Internet. It also allows configured multiple hosts to receive the data. This reduced data flow can be used by multiple applications.
+ADSBNet is for lowering the data rate, and filtering the data so that it is more efficient over a radio network, or across the Internet. It also allows configured multiple hosts to receive the data. This reduced data flow can be used by multiple applications.
 
-ADSNet sends ASCII data using UDP protocol in both Unicast mode, and Multicast mode. Unicast mode is normally sent to Internet or radio modems using port 30339. Multicast mode uses port 31090 on multicast address 239.192.10.90 only on your LAN. These addresses were pretty much picked at random.
+ADSBNet sends ASCII data using UDP protocol in both Unicast mode, and Multicast mode. Unicast mode is normally sent to Internet or radio modems using port 30339. Multicast mode uses port 31090 on multicast address 239.192.10.90 only on your LAN. These addresses were pretty much picked at random.
 
-##### ADSNet Overview
+##### ADSBNet Overview
 The Basestation TCP port has ASCII text output representing target detections in real time. The TCP port data is quite redundant, and would require a lot of bandwidth to transmit over the internet.
 
 What is needed is a shim that groups this data into tracks, and then transmits tracks at a lower rate, with only changes to the tracks being sent. Also a heartbeat packet to say the transmitting site is still on the network, in the event no ADS-B targets are being processed (late at night). This heartbeat is transmitted every 30 seconds.
@@ -48,7 +48,7 @@ The remote internet hosts of the data have to be specified in the configuration 
 ADSNet only uses UDP protocol data format. This is a fire and forget broadcast data mode. The remote users don’t have to connect, nor do they have to acknowledge receipt. If they don’t get the data, or parts are corrupt, then the data is dropped until the next cycle. I haven't needed an error correction or CRC data in my testing with European remote users.
 ```
                       +----------+
-(TCP Port 30003)----->| ADS Net  |<------->(UDP Ucast Port 30339 WAN or ZeroTier LAN)
+(TCP Port 30003)----->| ADSBNet  |<------->(UDP Ucast Port 30339 WAN or ZeroTier LAN)
                       |          |
                       |          |-------->(UDP Mcast Port 31090 Local)
  RAW ADS-B Data       |          |
@@ -79,10 +79,10 @@ If you don’t specify a unicast.address then the unicast transmit port is not u
 
 The “:y” and “:n” in the host names signify that you want to send all tracks (“:y”), or just local tracks (“:n”). This is useful if you have a friend who wants to see all your tracks that you have merged from other sites. This user will no doubt be receive only, because otherwise he would also receive their tracks in return.
 
-If you don't want the GUI to display, you can switch it off in the ```adsnet.config``` file by setting ```gui.enable = false```. It is default true.
+If you don't want the GUI to display, you can switch it off in the ```adsbnet.config``` file by setting ```gui.enable = false```. It is default true.
 
-##### ADSNet Data output Format
-Currently, the ADSNet program outputs two types of data: TRK and STA. The TRK is Track Data, and the STA is Station Data, or the Heartbeat. Each line is terminated with a CR, LF.
+##### ADSBNet Data output Format
+Currently, the ADSBNet program outputs two types of data: TRK and STA. The TRK is Track Data, and the STA is Station Data, or the Heartbeat. Each line is terminated with a CR, LF.
 
 The TRK line has the following fields:
 ```
@@ -114,6 +114,6 @@ HomeLongitude   The site longitude in degrees and fractions of degree (+ is east
 ##### Router Config
 There are many routers on the market, and it would be hard to give out procedures, but most have a feature called port forwarding, or virtual server. You must adjust your router to open up the firewall port for Unicast UDP Port 30339.
 
-Then you must configure the IP address where your ADSNet program is running. This will allow UDP packets to arrive on the WAN side of your router and pass unmolested to the LAN side and a particular machine. Also check if your router has a switch to enable multicast. If you are using ZeroTier Unicast, you don't need any port forwarding.
+Then you must configure the IP address where your ADSBNet program is running. This will allow UDP packets to arrive on the WAN side of your router and pass unmolested to the LAN side and a particular machine. Also check if your router has a switch to enable multicast. If you are using ZeroTier Unicast, you don't need any port forwarding.
 
 If you are using a Public WiFi or a subsidized cost network in your home, then it might have UDP networking restricted. Many free or low cost networks drop this network data to prevent users from running servers.
