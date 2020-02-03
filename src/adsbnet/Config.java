@@ -234,7 +234,7 @@ public final class Config {
                     if (zerotierTime == 0L) {
                         zerotierTime = 10000L;
                     } else {
-                        zerotierTime *= 10000L;
+                        zerotierTime *= 1000L;
                     }
                 } catch (NumberFormatException e) {
                     zerotierTime = 10000L;
@@ -244,26 +244,26 @@ public final class Config {
             
             temp = Props.getProperty("station.latitude");
             if (temp == null) {
-                homeLat = 0.0D;
+                homeLat = 0.0;
                 System.out.println("station.latitude not set");
             } else {
                 try {
                     homeLat = Double.parseDouble(temp.trim());
                 } catch (NumberFormatException e) {
-                    homeLat = 0.0D;
+                    homeLat = 0.0;
                     System.err.println("station.latitude (" + temp + ") invalid");
                 }
             }
 
             temp = Props.getProperty("station.longitude");
             if (temp == null) {
-                homeLon = 0.0D;
+                homeLon = 0.0;
                 System.out.println("station.longitude not set");
             } else {
                 try {
                     homeLon = Double.parseDouble(temp.trim());
                 } catch (NumberFormatException e) {
-                    homeLon = 0.0D;
+                    homeLon = 0.0;
                     System.err.println("station.longitude (" + temp + ") invalid");
                 }
             }
