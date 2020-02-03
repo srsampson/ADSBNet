@@ -99,9 +99,7 @@ public final class ZerotierTrackBuilder extends Thread {
                                 (id.getOnGround() == true) ? "-1" : "0",
                                 id.getTrackQuality());
                         sendZerotier(trkstr);
-                        System.out.print(trkstr);
                     }
-                    System.out.println();
                 }
             }
             try {
