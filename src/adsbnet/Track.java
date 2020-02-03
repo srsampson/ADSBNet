@@ -38,7 +38,8 @@ public final class Track {
     private long updateTime;        // zulu time object was updated
     private long updatePositionTime;// zulu time object lat/lon position was updated
     private long detectedTime;      // zulu time object was locally detected
-    private boolean updated;        // set on update, cleared on sent
+    private boolean multiUpdated;   // set on multicast update, cleared on sent
+    private boolean zeroUpdated;    // set on zerotier update, cleared on sent
     //
     private final ZuluMillis zulu;        // UTC time generator
 
@@ -60,7 +61,8 @@ public final class Track {
         this.updatePositionTime = this.detectedTime = 0L;
         this.updateTime = zulu.getUTCTime();
         this.alert = this.emergency = this.spi = this.isOnGround = false;
-        this.updated = false;
+        this.multiUpdated = false;
+        this.zeroUpdated = false;
     }
 
     /**
@@ -124,7 +126,8 @@ public final class Track {
     public void incrementTrackQuality() {
         if (this.trackQuality < 9) {
             this.trackQuality++;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -134,7 +137,8 @@ public final class Track {
     public void decrementTrackQuality() {
         if (this.trackQuality > 0) {
             this.trackQuality--;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -161,19 +165,37 @@ public final class Track {
      *
      * @return boolean which signals if the track has been updated
      */
-    public boolean getUpdated() {
-        return this.updated;
+    public boolean getMultiUpdated() {
+        return this.multiUpdated;
     }
 
+    /**
+     * Method to check if the track has been updated
+     *
+     * @return boolean which signals if the track has been updated
+     */
+    public boolean getZeroUpdated() {
+        return this.zeroUpdated;
+    }
+    
     /**
      * Method to flag a track as being updated or not updated
      *
      * @param val a boolean to set or reset the track updated status
      */
-    public void setUpdated(boolean val) {
-        this.updated = val;
+    public void setMultiUpdated(boolean val) {
+        this.multiUpdated = val;
     }
-
+    
+    /**
+     * Method to flag a track as being updated or not updated
+     *
+     * @param val a boolean to set or reset the track updated status
+     */
+    public void setZeroUpdated(boolean val) {
+        this.zeroUpdated = val;
+    }
+    
     /**
      * Method to return the Aircraft Mode-S Hex ID
      *
@@ -283,7 +305,8 @@ public final class Track {
 
         if (this.verticalRate != vs) {
             this.verticalRate = vs;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -303,7 +326,8 @@ public final class Track {
         }
 
         this.groundSpeed = val;
-        this.updated = true;
+        this.multiUpdated = true;
+        this.zeroUpdated = true;
     }
 
     /**
@@ -322,7 +346,8 @@ public final class Track {
         }
 
         this.groundTrack = val;
-        this.updated = true;
+        this.multiUpdated = true;
+        this.zeroUpdated = true;
     }
 
     /**
@@ -337,7 +362,8 @@ public final class Track {
         
         if (this.altitude != val) {
             this.altitude = val;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -389,8 +415,7 @@ public final class Track {
         }
 
         if (changed) {
-            incrementTrackQuality();
-            this.updated = true;
+            incrementTrackQuality();    // sets updated booleans also
             this.updatePositionTime = zulu.getUTCTime();
         }
     }
@@ -412,7 +437,8 @@ public final class Track {
     public void setCallsign(String val) {
         if (!val.equals(this.callsign)) {
             this.callsign = val;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -437,7 +463,8 @@ public final class Track {
         
         if (this.squawk != val) {
             this.squawk = val;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -478,7 +505,8 @@ public final class Track {
     public void setOnGround(boolean val) {
         if (this.isOnGround != val) {
             this.isOnGround = val;
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 
@@ -523,7 +551,8 @@ public final class Track {
         }
 
         if (changed) {
-            this.updated = true;
+            this.multiUpdated = true;
+            this.zeroUpdated = true;
         }
     }
 }

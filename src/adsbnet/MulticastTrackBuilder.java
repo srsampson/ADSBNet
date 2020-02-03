@@ -24,18 +24,13 @@ public final class MulticastTrackBuilder extends Thread {
     private final ZuluMillis zulu;
     private final Config config;
     private final MulticastSocket msocket;
-    private final MulticastSocket zsocket;
-    //
-    private final long zerotierTime;
     //
     private boolean shutdown;
 
-    public MulticastTrackBuilder(Config c, MulticastSocket ms, MulticastSocket zs, KineticParse proc) {
+    public MulticastTrackBuilder(Config c, MulticastSocket ms, KineticParse proc) {
         this.config = c;
         this.process = proc;
         this.msocket = ms;
-        this.zsocket = zs;
-        this.zerotierTime = config.getZerotierTime(); // 10 sec default
         this.zulu = new ZuluMillis();
 
         track = new Thread(this);
@@ -59,15 +54,6 @@ public final class MulticastTrackBuilder extends Thread {
         }
     }
 
-    private void sendZerotier(String data) {
-        try {
-            byte[] buffer = data.getBytes("US-ASCII");
-            zsocket.send(new DatagramPacket(buffer, buffer.length, InetAddress.getByName(config.getZerotierHost()), config.getZerotierPort()));
-        } catch (IOException e) {
-            // Punt
-        }
-    }
-
     @Override
     public void run() {
         Timestamp sqlTime = new Timestamp(0L);
@@ -80,7 +66,7 @@ public final class MulticastTrackBuilder extends Thread {
 
         while (shutdown == false) {
             now = zulu.getUTCTime();
-            values = process.getTrackUpdatedHashTable(); // remember, this is only a copy of the track queue
+            values = process.getTrackMultiUpdatedHashTable(); // remember, this is only a copy of the track queue
 
             if (values.size() > 0) {
                 for (Track id : values) {
@@ -108,11 +94,6 @@ public final class MulticastTrackBuilder extends Thread {
                             (id.getOnGround() == true) ? "-1" : "0",
                             id.getTrackQuality());
                     sendLAN(trkstr);
-
-                    if ((now - last) > zerotierTime) {   // 10 second by default
-                        last = now;
-                        sendZerotier(trkstr);
-                    }
                 }
 
                 try {

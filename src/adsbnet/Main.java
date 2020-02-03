@@ -30,6 +30,7 @@ public final class Main {
     private static MulticastSocket zs;
     //
     private static MulticastTrackBuilder mtrack;
+    private static ZerotierTrackBuilder ztrack;
     private static UnicastTrackBuilder utrack;
     private static KineticParse con;
     //
@@ -97,13 +98,14 @@ public final class Main {
         }
 
         try {
-            mtrack = new MulticastTrackBuilder(c, ms, zs, con);
+            mtrack = new MulticastTrackBuilder(c, ms, con);
+            ztrack = new ZerotierTrackBuilder(c, zs, con);
             utrack = new UnicastTrackBuilder(c, ds, con);
         } catch (Exception e) {
             System.exit(-1);
         }
         
-        Shutdown sh = new Shutdown(con, mtrack, utrack);
+        Shutdown sh = new Shutdown(con, mtrack, ztrack, utrack);
         Runtime.getRuntime().addShutdownHook(sh);
     }
 }

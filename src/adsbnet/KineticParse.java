@@ -321,13 +321,13 @@ public final class KineticParse extends Thread {
      *
      * @return vector containing a copy of the modified Track objects
      */
-    public CopyOnWriteArrayList<Track> getTrackUpdatedHashTable() {
+    public CopyOnWriteArrayList<Track> getTrackMultiUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        trackReports.values().stream().filter((id) -> (id.getUpdated() == true)).map((id) -> {
+        trackReports.values().stream().filter((id) -> (id.getMultiUpdated() == true)).map((id) -> {
             // reset the update boolean
 
-            id.setUpdated(false);
+            id.setMultiUpdated(false);
             return id;
         }).forEachOrdered((id) -> {
             result.add(id);
@@ -337,6 +337,26 @@ public final class KineticParse extends Thread {
     }
 
     /**
+     * Method to make a copy of all modified Track objects
+     *
+     * @return vector containing a copy of the modified Track objects
+     */
+    public CopyOnWriteArrayList<Track> getTrackZeroUpdatedHashTable() {
+        CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
+
+        trackReports.values().stream().filter((id) -> (id.getZeroUpdated() == true)).map((id) -> {
+            // reset the update boolean
+
+            id.setZeroUpdated(false);
+            return id;
+        }).forEachOrdered((id) -> {
+            result.add(id);
+        });
+
+        return result;
+    }
+    
+    /**
      * Method to make a copy of the modified LOCAL Track objects
      *
      * @return a vector containing a copy of the modified Track objects
@@ -344,10 +364,10 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getLocalTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        trackReports.values().stream().filter((id) -> ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_LOCAL))).map((id) -> {
+        trackReports.values().stream().filter((id) -> ((id.getMultiUpdated() == true) && (id.getTrackType() == Track.TRACK_LOCAL))).map((id) -> {
             // reset the update boolean
 
-            id.setUpdated(false);
+            id.setMultiUpdated(false);
             return id;
         }).forEachOrdered((id) -> {
             result.add(id);
@@ -364,10 +384,10 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getRemoteTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        trackReports.values().stream().filter((id) -> ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_REMOTE))).map((id) -> {
+        trackReports.values().stream().filter((id) -> ((id.getMultiUpdated() == true) && (id.getTrackType() == Track.TRACK_REMOTE))).map((id) -> {
             // reset the update boolean
 
-            id.setUpdated(false);
+            id.setMultiUpdated(false);
             return id;
         }).forEachOrdered((id) -> {
             result.add(id);
