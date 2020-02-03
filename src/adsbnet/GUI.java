@@ -192,7 +192,7 @@ public final class GUI extends JFrame {
         jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("ADSNet 1.90");
+        setTitle("ADSBNet 1.90");
         setBounds(new java.awt.Rectangle(300, 300, 0, 0));
         setResizable(false);
 
