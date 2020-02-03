@@ -1,7 +1,7 @@
 /*
  * Shutdown.java
  */
-package adsnet;
+package adsbnet;
 
 public final class Shutdown extends Thread {
 

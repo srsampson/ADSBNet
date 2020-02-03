@@ -1,22 +1,24 @@
 /**
  * GUI.java
  */
-package adsnet;
+package adsbnet;
 
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import javax.swing.JFrame;
 import javax.swing.table.DefaultTableModel;
 
 /**
  * A Class to display a GUI window.
  *
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
-public final class GUI extends javax.swing.JFrame {
+public final class GUI extends JFrame {
 
     private static final long TIMEOUT = 1000L;		// 1 second update on PU display
     private static final long RATE = 500L;              // .5 second
+    //
     private final ZuluMillis zulu = new ZuluMillis();
     //
     private final Timer timer1;
@@ -26,15 +28,15 @@ public final class GUI extends javax.swing.JFrame {
     //
     private final KineticParse process;
     //
-    private static long messageType1;
-    private static long messageType2;
-    private static long messageType3;
-    private static long messageType4;
-    private static long messageType5;
-    private static long messageType6;
-    private static long messageType7;
+    private long messageType1;
+    private long messageType2;
+    private long messageType3;
+    private long messageType4;
+    private long messageType5;
+    private long messageType6;
+    private long messageType7;
     //
-    private static long trackCount;
+    private long trackCount;
 
     public GUI(KineticParse c) {
         this.process = c;
@@ -190,7 +192,7 @@ public final class GUI extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("ADSNet 1.85");
+        setTitle("ADSNet 1.90");
         setBounds(new java.awt.Rectangle(300, 300, 0, 0));
         setResizable(false);
 
@@ -296,7 +298,7 @@ public final class GUI extends javax.swing.JFrame {
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(18, 18, 18)
                 .addComponent(type1Count, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(type2Count, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -308,11 +310,11 @@ public final class GUI extends javax.swing.JFrame {
                 .addComponent(type5Count, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(type6Count, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(type7count, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(trackCounter, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(33, Short.MAX_VALUE))
+                .addContainerGap(42, Short.MAX_VALUE))
         );
 
         airborne.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
@@ -349,17 +351,17 @@ public final class GUI extends javax.swing.JFrame {
                     .addComponent(tracks)
                     .addComponent(airborne)
                     .addComponent(velocity)
-                    .addComponent(altitude)
-                    .addComponent(squawk)
                     .addComponent(air2air)
                     .addComponent(surface)
-                    .addComponent(callsign))
+                    .addComponent(callsign)
+                    .addComponent(squawk)
+                    .addComponent(altitude))
                 .addContainerGap(27, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(22, 22, 22)
                 .addComponent(callsign)
                 .addGap(18, 18, 18)
                 .addComponent(surface)
@@ -371,11 +373,11 @@ public final class GUI extends javax.swing.JFrame {
                 .addComponent(altitude)
                 .addGap(18, 18, 18)
                 .addComponent(squawk)
-                .addGap(28, 28, 28)
+                .addGap(18, 18, 18)
                 .addComponent(air2air)
                 .addGap(18, 18, 18)
                 .addComponent(tracks)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(40, Short.MAX_VALUE))
         );
 
         airborne.getAccessibleContext().setAccessibleParent(jPanel1);

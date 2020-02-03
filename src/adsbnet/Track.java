@@ -1,12 +1,12 @@
 /**
  * Track.java
  */
-package adsnet;
+package adsbnet;
 
 /**
  * This is the vehicle track object
  *
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
 public final class Track {
 
@@ -40,7 +40,7 @@ public final class Track {
     private long detectedTime;      // zulu time object was locally detected
     private boolean updated;        // set on update, cleared on sent
     //
-    private ZuluMillis zulu;        // UTC time generator
+    private final ZuluMillis zulu;        // UTC time generator
 
     public Track() {
         this.zulu = new ZuluMillis();

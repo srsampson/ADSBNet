@@ -1,12 +1,12 @@
 /**
  * HeartBeat.java
  */
-package adsnet;
+package adsbnet;
 
 /**
  *  Class to store a network received Participant Unit (PU) Heartbeat
  *
- *  @author Steve Sampson, May 2010
+ *  @author Steve Sampson, January 2020
  */
 public final class HeartBeat {
 
@@ -14,7 +14,7 @@ public final class HeartBeat {
     private final long stationID;         // Station ID
     private final double stationLat;      // Station Latitude
     private final double stationLon;      // Station Longitude
-    private final long diffTime;          // UTC difference between local and remote
+    private long diffTime;          // UTC difference between local and remote
     //
     private String stationName;           // Station Name
     private String stationIP;             // Station IP Address
@@ -51,6 +51,10 @@ public final class HeartBeat {
         return this.diffTime;
     }
 
+    public void setDiffTime(long val) {
+        this.diffTime = val;
+    }
+    
     public double getStationLat() {
         return this.stationLat;
     }

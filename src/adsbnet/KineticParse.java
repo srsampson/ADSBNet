@@ -1,10 +1,9 @@
 /**
  * KineticParse.java
  */
-package adsnet;
+package adsbnet;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Decode the messages into their object types, and then push the objects onto
  * the msgQueue.
  *
- * @author Steve Sampson, November 2018
+ * @author Steve Sampson, January 2020
  */
 public final class KineticParse extends Thread {
 
@@ -54,15 +53,15 @@ public final class KineticParse extends Thread {
     private static final long RATE1 = 30L * 1000L;              // 30 seconds
     private static final long RATE2 = 5L * 1000L;               // 5 seconds
     //
-    private ZuluMillis zulu;
+    private final ZuluMillis zulu;
     private Socket connection;
-    private BufferedWriter logwriter;
     private BufferedReader line;
     //
     private final Thread socketReceive;
     //
-    private static boolean shutdown;
-    private static boolean sbsStatus;
+    private boolean shutdown;
+    private boolean sbsStatus;
+    private boolean remoteStatus;
     //
     private final ConcurrentHashMap<String, Track> trackReports;
     private final ConcurrentHashMap<Long, HeartBeat> beatReports;
@@ -70,9 +69,7 @@ public final class KineticParse extends Thread {
     //
     private final Config config;
     private final GUI gui;
-    /**
-     * The socket data connection
-     */
+    //
     private DatagramSocket socket;
     private InputStream input;
     //
@@ -85,23 +82,13 @@ public final class KineticParse extends Thread {
     /**
      * Class constructor
      *
-     * @param c
-     * @param l
+     * @param c is ASCII config file
      */
-    public KineticParse(Config c, BufferedWriter l) {
+    public KineticParse(Config c) {
         config = c;
-        logwriter = l;
         zulu = new ZuluMillis();
 
         shutdown = false;
-
-        try {
-            socket = new DatagramSocket(config.getUnicastPort());
-            socket.setSoTimeout(10);    // 10ms
-        } catch (SocketException e) {
-            System.err.println("KineticParse::constructor exception: Unable to open datagram socket " + e.toString());
-            System.exit(-1);
-        }
 
         trackReports = new ConcurrentHashMap<>();
         beatReports = new ConcurrentHashMap<>();
@@ -113,7 +100,13 @@ public final class KineticParse extends Thread {
             gui = null;
         }
 
-        openSocket();
+        if (config.getUnicastHostCount() != 0) {
+            openRemote();
+        } else {
+            remoteStatus = false;
+        }
+        
+        openSBSSocket();
 
         task1 = new UpdateReports();
         timer1 = new Timer();
@@ -140,12 +133,28 @@ public final class KineticParse extends Thread {
         return sbsStatus;
     }
 
-    /**
-     * A method to open a buffered socket connection to a TCP server
-     */
-    public void openSocket() {
+    public boolean getRemoteStatus() {
+        return remoteStatus;
+    }
+
+    public void openRemote() {
         try {
-            connection = new Socket(config.getSocketHost(), config.getSocketPort());
+            socket = new DatagramSocket(config.getUnicastPort());
+            socket.setSoTimeout(10);    // 10ms
+        } catch (SocketException e) {
+            remoteStatus = false;
+            return;
+        }
+        
+        remoteStatus = true;
+    }
+    
+    /**
+     * A method to open Basestation socket connection
+     */
+    public void openSBSSocket() {
+        try {
+            connection = new Socket(config.getStationHost(), config.getStationPort());
             input = connection.getInputStream();
             line = new BufferedReader(new InputStreamReader(input));
         } catch (IOException e) {
@@ -156,19 +165,28 @@ public final class KineticParse extends Thread {
         sbsStatus = true;
     }
 
+    private void closeRemote() {
+        remoteStatus = false;
+        
+        try {
+            socket.close();
+        } catch (Exception e) {
+            // don't care
+        }
+    }
+    
     /**
      * Method to close down the network TCP interface
      */
-    private void closeSocket() {
+    private void closeSBSSocket() {
         sbsStatus = false;
 
         try {
             line.close();
             input.close();
             connection.close();
-            socket.close();
         } catch (IOException e) {
-            System.err.println("KineticParse::closeSocket exception " + e.toString());
+            // don't care
         }
     }
 
@@ -260,18 +278,12 @@ public final class KineticParse extends Thread {
         timer2.cancel();
         shutdown = true;
 
-        if (this.logwriter != (BufferedWriter) null) {
-            try {
-                this.logwriter.close();
-            } catch (IOException e) {
-            }
-        }
-
         if (config.getGUIEnable() == true) {
             gui.close();
         }
 
-        closeSocket();
+        closeSBSSocket();
+        closeRemote();
     }
 
     /**
@@ -282,9 +294,9 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getTrackHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        for (Track trk : trackReports.values()) {
+        trackReports.values().forEach((trk) -> {
             result.add(trk);
-        }
+        });
 
         return result;
     }
@@ -297,11 +309,9 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getTrackLocalHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        for (Track id : trackReports.values()) {
-            if (id.getTrackType() == Track.TRACK_LOCAL) {
-                result.add(id);
-            }
-        }
+        trackReports.values().stream().filter((id) -> (id.getTrackType() == Track.TRACK_LOCAL)).forEachOrdered((id) -> {
+            result.add(id);
+        });
 
         return result;
     }
@@ -314,14 +324,14 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        for (Track id : trackReports.values()) {
-            if (id.getUpdated() == true) {
-                // reset the update boolean
+        trackReports.values().stream().filter((id) -> (id.getUpdated() == true)).map((id) -> {
+            // reset the update boolean
 
-                id.setUpdated(false);
-                result.add(id);
-            }
-        }
+            id.setUpdated(false);
+            return id;
+        }).forEachOrdered((id) -> {
+            result.add(id);
+        });
 
         return result;
     }
@@ -334,14 +344,14 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getLocalTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        for (Track id : trackReports.values()) {
-            if ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_LOCAL)) {
-                // reset the update boolean
+        trackReports.values().stream().filter((id) -> ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_LOCAL))).map((id) -> {
+            // reset the update boolean
 
-                id.setUpdated(false);
-                result.add(id);
-            }
-        }
+            id.setUpdated(false);
+            return id;
+        }).forEachOrdered((id) -> {
+            result.add(id);
+        });
 
         return result;
     }
@@ -354,14 +364,14 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getRemoteTrackUpdatedHashTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        for (Track id : trackReports.values()) {
-            if ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_REMOTE)) {
-                // reset the update boolean
+        trackReports.values().stream().filter((id) -> ((id.getUpdated() == true) && (id.getTrackType() == Track.TRACK_REMOTE))).map((id) -> {
+            // reset the update boolean
 
-                id.setUpdated(false);
-                result.add(id);
-            }
-        }
+            id.setUpdated(false);
+            return id;
+        }).forEachOrdered((id) -> {
+            result.add(id);
+        });
 
         return result;
     }
@@ -441,9 +451,9 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<HeartBeat> getBeatHashTable() {
         CopyOnWriteArrayList<HeartBeat> result = new CopyOnWriteArrayList<>();
 
-        for (HeartBeat id : beatReports.values()) {
+        beatReports.values().forEach((id) -> {
             result.add(id);
-        }
+        });
 
         return result;
     }
@@ -507,9 +517,9 @@ public final class KineticParse extends Thread {
     public CopyOnWriteArrayList<Track> getWANQueueTable() {
         CopyOnWriteArrayList<Track> result = new CopyOnWriteArrayList<>();
 
-        for (Track id : wanqueue.values()) {
+        wanqueue.values().forEach((id) -> {
             result.add(id);
-        }
+        });
 
         return result;
     }
@@ -548,7 +558,7 @@ public final class KineticParse extends Thread {
         wanqueue.clear();
     }
 
-    private void decodePacket(String ip, String data) {
+    private void decodeRemotePacket(String ip, String data) {
         Track id, old;
         String[] token;
 
@@ -561,7 +571,8 @@ public final class KineticParse extends Thread {
                 long remoteTime = Timestamp.valueOf(token[2].trim()).getTime();
 
                 /*
-                 * Most of people don't sync their clocks to NTP
+                 * Most people don't sync their clocks to NTP
+                 * So this lets you see how far they are off
                  */
                 long updateTime = zulu.getUTCTime();
                 long diffTime = updateTime - remoteTime;
@@ -582,12 +593,13 @@ public final class KineticParse extends Thread {
                     tmp.setUpdateTime(updateTime);
                     tmp.incrementBeatCount();
                     tmp.setTrackCount(ntracks);
+                    tmp.setDiffTime(diffTime);
                     beatReports.put(stationID, tmp);
                 } else {
                     beatReports.put(stationID, new HeartBeat(stationName, stationID, stationLat, stationLon, diffTime, ntracks));
                 }
             } else if (token[0].equals("TRK")) {
-                String acid = token[3].trim();
+                String acid = token[3];
                 long stationID = (long) Long.parseLong(token[1].trim());
 
                 /*
@@ -620,66 +632,66 @@ public final class KineticParse extends Thread {
                      */
                     id.setDetectedTime(Timestamp.valueOf(token[2]).getTime());
 
-                    if (!token[4].trim().equals("")) {
-                        id.setCallsign(token[4].trim());
+                    if (!token[4].equals("")) {
+                        id.setCallsign(token[4]);
                     }
 
                     int Squawk = -999;
-                    if (!token[5].trim().equals("")) {
-                        Squawk = Integer.parseInt(token[5].trim());
+                    if (!token[5].equals("")) {
+                        Squawk = Integer.parseInt(token[5]);
                     }
 
                     id.setSquawk(Squawk);
 
                     int vrate = -999;
-                    if (!token[6].trim().equals("")) {
-                        vrate = Integer.parseInt(token[6].trim());
+                    if (!token[6].equals("")) {
+                        vrate = Integer.parseInt(token[6]);
                     }
 
                     id.setVerticalRate(vrate);
 
                     double gt = -999.0;
-                    if (!token[7].trim().equals("")) {
-                        gt = Double.parseDouble(token[7].trim());
+                    if (!token[7].equals("")) {
+                        gt = Double.parseDouble(token[7]);
                     }
 
                     id.setGroundTrack(gt);
 
                     double gs = -999.0;
-                    if (!token[8].trim().equals("")) {
-                        gs = Double.parseDouble(token[8].trim());
+                    if (!token[8].equals("")) {
+                        gs = Double.parseDouble(token[8]);
                     }
 
                     id.setGroundSpeed(gs);
 
                     int alt = -999;
-                    if (!token[9].trim().equals("")) {
-                        alt = Integer.parseInt(token[9].trim());
+                    if (!token[9].equals("")) {
+                        alt = Integer.parseInt(token[9]);
                     }
 
                     id.setAltitude(alt);
 
                     int quality = 0;
-                    if (!token[16].trim().equals("")) {
-                        quality = Integer.parseInt(token[16].trim());
+                    if (!token[16].equals("")) {
+                        quality = Integer.parseInt(token[16]);
                     }
 
                     id.setTrackQuality(quality);
 
                     double lat = 0.0;
-                    if (!token[10].trim().equals("")) {
-                        lat = Double.parseDouble(token[10].trim());
+                    if (!token[10].equals("")) {
+                        lat = Double.parseDouble(token[10]);
                     }
 
                     double lon = 0.0;
-                    if (!token[11].trim().equals("")) {
-                        lon = Double.parseDouble(token[11].trim());
+                    if (!token[11].equals("")) {
+                        lon = Double.parseDouble(token[11]);
                     }
 
-                    boolean Alert = token[12].trim().equals("-1");
-                    boolean Emergency = token[13].trim().equals("-1");
-                    boolean spif = token[14].trim().equals("-1");
-                    boolean OnGround = token[15].trim().equals("-1");
+                    boolean Alert = token[12].equals("-1");
+                    boolean Emergency = token[13].equals("-1");
+                    boolean spif = token[14].equals("-1");
+                    boolean OnGround = token[15].equals("-1");
 
                     id.setAlert(Alert, Emergency, spif);
                     id.setOnGround(OnGround);
@@ -762,21 +774,23 @@ public final class KineticParse extends Thread {
              */
             byte[] buff = new byte[512];
 
-            while (true) {
-                try {
-                    dinput = new DatagramPacket(buff, buff.length);
-                    socket.receive(dinput);  // blocks for 10ms max
-                    ip = dinput.getAddress().getHostAddress();
-                    data = new String(buff, 0, dinput.getLength(), "US-ASCII");
-                    decodePacket(ip, data);
-                } catch (IOException e) {
-                    // timeout
-                    break;
+            if (remoteStatus == true) {
+                while (true) {
+                    try {
+                        dinput = new DatagramPacket(buff, buff.length);
+                        socket.receive(dinput);  // blocks for 10ms max
+                        ip = dinput.getAddress().getHostAddress();
+                        data = new String(buff, 0, dinput.getLength(), "US-ASCII");
+                        decodeRemotePacket(ip, data);
+                    } catch (IOException e) {
+                        // timeout
+                        break;
+                    }
                 }
             }
 
             // Now check Basestation
-            if (getSBSStatus() == true) {
+            if (sbsStatus == true) {
                 try {
                     while (line.ready()) {
                         data = line.readLine();
@@ -784,11 +798,12 @@ public final class KineticParse extends Thread {
 
                         if (data.startsWith("MSG")) {
                             if (!data.startsWith("MSG,8")) {
+                                // modesmixer2 sometimes doesn't output ONGROUND
+                                // so this will make it skip
+                                token = data.split(",", -2);   // Tokenize the data input line
 
-                                token = data.split(",");   // Tokenize the data input line
-
-                                type = Integer.parseInt(token[1].trim());
-                                acid = token[HEXIDENT].trim();
+                                type = Integer.parseInt(token[1]);
+                                acid = token[HEXIDENT];
 
                                 /*
                                  * See if this ACID is on the table already
@@ -812,7 +827,7 @@ public final class KineticParse extends Thread {
                                 switch (type) {
                                     case 1:
                                         try {
-                                            callsign = token[CALLSIGN].replace('@', ' ').trim();  // This symbol @ means null
+                                            callsign = token[CALLSIGN].replace('@', ' ');  // This symbol @ means null
                                         } catch (Exception e) {
                                             /*
                                              * gomer has no callsign inserted, but broadcasting type 1 callsign
@@ -827,44 +842,40 @@ public final class KineticParse extends Thread {
                                         }
                                         break;
                                     case 2:
-                                        if (!token[ALTITUDE].trim().equals("")) {
-                                            altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                        if (!token[ALTITUDE].equals("")) {
+                                            altitude = Integer.parseInt(token[ALTITUDE]);
                                             id.setAltitude(altitude);
                                         }
 
-                                        if (!token[GSPEED].trim().equals("")) {
-                                            groundSpeed = Double.parseDouble(token[GSPEED].trim());
+                                        if (!token[GSPEED].equals("")) {
+                                            groundSpeed = Double.parseDouble(token[GSPEED]);
                                             id.setGroundSpeed(groundSpeed);
                                         }
 
-                                        if (!token[GTRACK].trim().equals("")) {
-                                            groundTrack = Double.parseDouble(token[GTRACK].trim());
+                                        if (!token[GTRACK].equals("")) {
+                                            groundTrack = Double.parseDouble(token[GTRACK]);
                                             id.setGroundTrack(groundTrack);
                                         }
 
-                                        if (!token[LATITUDE].trim().equals("")) {
-                                            latitude = Double.parseDouble(token[LATITUDE].trim());
+                                        if (!token[LATITUDE].equals("")) {
+                                            latitude = Double.parseDouble(token[LATITUDE]);
                                         } else {
                                             latitude = 0.0;
                                         }
 
-                                        if (!token[LONGITUDE].trim().equals("")) {
-                                            longitude = Double.parseDouble(token[LONGITUDE].trim());
+                                        if (!token[LONGITUDE].equals("")) {
+                                            longitude = Double.parseDouble(token[LONGITUDE]);
                                         } else {
                                             longitude = 0.0;
                                         }
 
-                                        try {
-                                            temp = token[GROUND].trim();
+                                        temp = token[GROUND];
 
-                                            if (!temp.equals("")) {
-                                                gnd = Integer.parseInt(temp);
+                                        if (!temp.equals("")) {
+                                            gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (altitude == 0) || (gnd == -1);
-                                            } else {
-                                                isOnGround = false;
-                                            }
-                                        } catch (Exception eg) {
+                                            isOnGround = (altitude == 0) || (gnd == -1);
+                                        } else {
                                             isOnGround = false;
                                         }
 
@@ -897,14 +908,14 @@ public final class KineticParse extends Thread {
                                         }
 
                                         id.setOnGround(isOnGround);
-                                        
+
                                         if (config.getGUIEnable() == true) {
                                             gui.incType2();
                                         }
                                         break;
                                     case 3:
-                                        if (!token[ALTITUDE].trim().equals("")) {
-                                            altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                        if (!token[ALTITUDE].equals("")) {
+                                            altitude = Integer.parseInt(token[ALTITUDE]);
 
                                             if (altitude < 100) {
                                                 // this is probably bullcrap
@@ -914,65 +925,49 @@ public final class KineticParse extends Thread {
                                             id.setAltitude(altitude);
                                         }
 
-                                        if (!token[LATITUDE].trim().equals("")) {
-                                            latitude = Double.parseDouble(token[LATITUDE].trim());
+                                        if (!token[LATITUDE].equals("")) {
+                                            latitude = Double.parseDouble(token[LATITUDE]);
                                         } else {
                                             latitude = 0.0;
                                         }
 
-                                        if (!token[LONGITUDE].trim().equals("")) {
-                                            longitude = Double.parseDouble(token[LONGITUDE].trim());
+                                        if (!token[LONGITUDE].equals("")) {
+                                            longitude = Double.parseDouble(token[LONGITUDE]);
                                         } else {
                                             longitude = 0.0;
                                         }
 
-                                        try {
-                                            temp = token[ALERT].trim();
+                                        temp = token[ALERT];
 
-                                            if (!temp.equals("")) {
-                                                alert = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                alert = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            alert = Integer.parseInt(temp) != 0;
+                                        } else {
                                             alert = false;
                                         }
 
-                                        try {
-                                            temp = token[EMERG].trim();
+                                        temp = token[EMERG];
 
-                                            if (!temp.equals("")) {
-                                                emergency = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                emergency = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            emergency = Integer.parseInt(temp) != 0;
+                                        } else {
                                             emergency = false;
                                         }
 
-                                        try {
-                                            temp = token[SPI].trim();
+                                        temp = token[SPI];
 
-                                            if (!temp.equals("")) {
-                                                spi = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                spi = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            spi = Integer.parseInt(temp) != 0;
+                                        } else {
                                             spi = false;
                                         }
 
-                                        try {
-                                            temp = token[GROUND].trim();
+                                        temp = token[GROUND];
 
-                                            if (!temp.equals("")) {
-                                                gnd = Integer.parseInt(temp);
+                                        if (!temp.equals("")) {
+                                            gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (gnd == -1);
-                                            } else {
-                                                isOnGround = false;
-                                            }
-                                        } catch (Exception eg) {
+                                            isOnGround = (gnd == -1);
+                                        } else {
                                             isOnGround = false;
                                         }
 
@@ -1006,24 +1001,24 @@ public final class KineticParse extends Thread {
 
                                         id.setOnGround(isOnGround);
                                         id.setAlert(alert, emergency, spi);
-                                        
+
                                         if (config.getGUIEnable() == true) {
                                             gui.incType3();
                                         }
                                         break;
                                     case 4:
-                                        if (!token[GSPEED].trim().equals("")) {
-                                            groundSpeed = Double.parseDouble(token[GSPEED].trim());
+                                        if (!token[GSPEED].equals("")) {
+                                            groundSpeed = Double.parseDouble(token[GSPEED]);
                                             id.setGroundSpeed(groundSpeed);
                                         }
 
-                                        if (!token[GTRACK].trim().equals("")) {
-                                            groundTrack = Double.parseDouble(token[GTRACK].trim());
+                                        if (!token[GTRACK].equals("")) {
+                                            groundTrack = Double.parseDouble(token[GTRACK]);
                                             id.setGroundTrack(groundTrack);
                                         }
 
-                                        if (!token[VRATE].trim().equals("")) {
-                                            verticalRate = Integer.parseInt(token[VRATE].trim());
+                                        if (!token[VRATE].equals("")) {
+                                            verticalRate = Integer.parseInt(token[VRATE]);
                                             id.setVerticalRate(verticalRate);
                                         }
 
@@ -1032,124 +1027,88 @@ public final class KineticParse extends Thread {
                                         }
                                         break;
                                     case 5:
-                                        if (!token[ALTITUDE].trim().equals("")) {
-                                            altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                        if (!token[ALTITUDE].equals("")) {
+                                            altitude = Integer.parseInt(token[ALTITUDE]);
                                             id.setAltitude(altitude);
                                         }
 
-                                        try {
-                                            temp = token[ALERT].trim();
+                                        temp = token[ALERT];
 
-                                            if (!temp.equals("")) {
-                                                alert = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                alert = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            alert = Integer.parseInt(temp) != 0;
+                                        } else {
                                             alert = false;
                                         }
 
-                                        try {
-                                            temp = token[SPI].trim();
+                                        temp = token[SPI];
 
-                                            if (!temp.equals("")) {
-                                                spi = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                spi = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            spi = Integer.parseInt(temp) != 0;
+                                        } else {
                                             spi = false;
                                         }
 
-                                        try {
-                                            temp = token[GROUND].trim();
+                                        temp = token[GROUND];
 
-                                            if (!temp.equals("")) {
-                                                gnd = Integer.parseInt(temp);
+                                        if (!temp.equals("")) {
+                                            gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (gnd == -1);
-                                            } else {
-                                                isOnGround = false;
-                                            }
-                                        } catch (Exception eg) {
+                                            isOnGround = (gnd == -1);
+                                        } else {
                                             isOnGround = false;
                                         }
 
                                         id.setAlert(alert, false, spi);
                                         id.setOnGround(isOnGround);
-                                        
+
                                         if (config.getGUIEnable() == true) {
                                             gui.incType5();
                                         }
                                         break;
                                     case 6:
-                                        try {
-                                            if (!token[ALTITUDE].trim().equals("")) {
-                                                altitude = Integer.parseInt(token[ALTITUDE].trim());
-                                            }
+                                        if (!token[ALTITUDE].equals("")) {
+                                            altitude = Integer.parseInt(token[ALTITUDE]);
+                                        }
 
-                                            if (altitude < 100) {
-                                                altitude = -999;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (altitude < 100) {
                                             altitude = -999;
                                         }
 
-                                        try {
-                                            if (!token[SQUAWK].trim().equals("")) {
-                                                squawk = Integer.parseInt(token[SQUAWK].trim());
-                                            }
-                                        } catch (Exception eg) {
-                                            squawk = -999;
+                                        if (!token[SQUAWK].equals("")) {
+                                            squawk = Integer.parseInt(token[SQUAWK]);
                                         }
 
-                                        try {
-                                            temp = token[ALERT].trim();
+                                        temp = token[ALERT];
 
-                                            if (!temp.equals("")) {
-                                                alert = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                alert = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            alert = Integer.parseInt(temp) != 0;
+                                        } else {
                                             alert = false;
                                         }
 
-                                        try {
-                                            temp = token[EMERG].trim();
+                                        temp = token[EMERG];
 
-                                            if (!temp.equals("")) {
-                                                emergency = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                emergency = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            emergency = Integer.parseInt(temp) != 0;
+                                        } else {
                                             emergency = false;
                                         }
 
-                                        try {
-                                            temp = token[SPI].trim();
+                                        temp = token[SPI];
 
-                                            if (!temp.equals("")) {
-                                                spi = Integer.parseInt(temp) != 0;
-                                            } else {
-                                                spi = false;
-                                            }
-                                        } catch (Exception eg) {
+                                        if (!temp.equals("")) {
+                                            spi = Integer.parseInt(temp) != 0;
+                                        } else {
                                             spi = false;
                                         }
 
-                                        try {
-                                            temp = token[GROUND].trim();
+                                        temp = token[GROUND];
 
-                                            if (!temp.equals("")) {
-                                                gnd = Integer.parseInt(temp);
+                                        if (!temp.equals("")) {
+                                            gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (gnd == -1);
-                                            } else {
-                                                isOnGround = false;
-                                            }
-                                        } catch (Exception eg) {
+                                            isOnGround = (gnd == -1);
+                                        } else {
                                             isOnGround = false;
                                         }
 
@@ -1157,14 +1116,14 @@ public final class KineticParse extends Thread {
                                         id.setSquawk(squawk);
                                         id.setAlert(alert, emergency, spi);
                                         id.setOnGround(isOnGround);
-                                        
+
                                         if (config.getGUIEnable() == true) {
                                             gui.incType6();
                                         }
                                         break;
                                     case 7:
-                                        if (!token[ALTITUDE].trim().equals("")) {
-                                            altitude = Integer.parseInt(token[ALTITUDE].trim());
+                                        if (!token[ALTITUDE].equals("")) {
+                                            altitude = Integer.parseInt(token[ALTITUDE]);
 
                                             if (altitude < 100) {
                                                 altitude = -999;
@@ -1173,22 +1132,18 @@ public final class KineticParse extends Thread {
                                             id.setAltitude(altitude);
                                         }
 
-                                        try {
-                                            temp = token[GROUND].trim();
+                                        temp = token[GROUND];
 
-                                            if (!temp.equals("")) {
-                                                gnd = Integer.parseInt(temp);
+                                        if (!temp.equals("")) {
+                                            gnd = Integer.parseInt(temp);
 
-                                                isOnGround = (gnd == -1);
-                                            } else {
-                                                isOnGround = false;
-                                            }
-                                        } catch (Exception eg) {
+                                            isOnGround = (gnd == -1);
+                                        } else {
                                             isOnGround = false;
                                         }
 
                                         id.setOnGround(isOnGround);
-                                        
+
                                         if (config.getGUIEnable() == true) {
                                             gui.incType7();
                                         }
@@ -1201,7 +1156,7 @@ public final class KineticParse extends Thread {
                             }
                         }
                     }
-                } catch (Exception e) {
+                } catch (IOException | NumberFormatException e) {
                     System.err.print(data);
                     System.err.println(" KineticParse::run exception " + e.toString());
                 }

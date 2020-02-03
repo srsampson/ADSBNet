@@ -1,11 +1,8 @@
 /**
- * ADSNet.java
+ * ADSBNet.java
  */
-package adsnet;
+package adsbnet;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -19,27 +16,25 @@ import javax.swing.UnsupportedLookAndFeelException;
  *
  * <p>
  * This software listens for target data on the Kinetic compatible socket and
- * builds tracks which are then sent out on specified unicast WAN hosts, and all
- * multicast LAN hosts.
+ * builds tracks which are then sent out on specified networks
  *
  * Uses UDP broadcasts for all transmitted tracks.
  *
- * @version 1.85
- * @author Steve Sampson, November 2018
+ * @version 1.90
+ * @author Steve Sampson, January 2020
  */
 public final class Main {
 
     private static DatagramSocket ds;
     private static MulticastSocket ms;
+    private static MulticastSocket zs;
     //
     private static MulticastTrackBuilder mtrack;
     private static UnicastTrackBuilder utrack;
     private static KineticParse con;
     //
-    private static String config = "adsnet.conf";
+    private static String config = "adsbnet.conf";
     private static Config c;
-    //
-    private static BufferedWriter logwriter = (BufferedWriter) null;
 
     public static void main(String[] args) {
         /*
@@ -66,21 +61,7 @@ public final class Main {
             }
         }
 
-        if (c.getMulticastLog() == true) {
-            try {
-                File logfile = new File(c.getHomeDir() + "adsnet.log");
-
-                if (!logfile.exists()) {
-                    logfile.createNewFile();
-                }
-
-                logwriter = new BufferedWriter(new FileWriter(logfile, true));
-            } catch (IOException e) {
-                System.out.println("Unable to create or open logfile!");
-            }
-        }
-
-        con = new KineticParse(c, logwriter);
+        con = new KineticParse(c);
 
         /*
          * Start the network broadcast ports
@@ -88,18 +69,35 @@ public final class Main {
         try {
             ds = new DatagramSocket();
             ds.setSoTimeout(800);
+        } catch (IOException e) {
+            System.err.println("main: unable to open and set unicast interfaces");
+            System.exit(-1);
+        }
+        
+        try {
             ms = new MulticastSocket(c.getMulticastPort());
             ms.setInterface(InetAddress.getByName(c.getMulticastNIC()));
             ms.joinGroup(InetAddress.getByName(c.getMulticastHost()));
             ms.setSoTimeout(800);
-            ms.setTimeToLive(3);   // I chose three in case you have a couple routers in your LAN/TUNNEL
+            ms.setTimeToLive(3);
         } catch (IOException e) {
-            System.err.println("main: unable to open and set network interfaces");
+            System.err.println("main: unable to open and set multicast interfaces");
             System.exit(-1);
         }
 
         try {
-            mtrack = new MulticastTrackBuilder(c, ms, con, logwriter);
+            zs = new MulticastSocket(c.getZerotierPort());
+            zs.setInterface(InetAddress.getByName(c.getZerotierNIC()));
+            zs.joinGroup(InetAddress.getByName(c.getZerotierHost()));
+            zs.setSoTimeout(800);
+            zs.setTimeToLive(3);
+        } catch (IOException e) {
+            System.err.println("main: unable to open and set zerotier interfaces");
+            System.exit(-1);
+        }
+
+        try {
+            mtrack = new MulticastTrackBuilder(c, ms, zs, con);
             utrack = new UnicastTrackBuilder(c, ds, con);
         } catch (Exception e) {
             System.exit(-1);

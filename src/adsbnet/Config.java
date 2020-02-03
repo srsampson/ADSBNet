@@ -1,7 +1,7 @@
 /**
  * Config.java
  */
-package adsnet;
+package adsbnet;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,26 +10,32 @@ import java.util.Properties;
 /**
  * A Class to store configuration parameters from config file
  *
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
 public final class Config {
 
-    private final static String MULTICAST_ADDRESS = "239.192.10.90";    // I made it up (has 1090 in it)
-    private final static int MULTICAST_PORT = 31090;                    // I made it up (has 1090 in it)
-    private final static int UNICAST_PORT = 30339;
-    private final static String SOCKET_ADDRESS = "127.0.0.1";
-    private final static int SOCKET_PORT = 30003;
+    private final static String MULTICAST_ADDRESS = "239.192.10.90";
+    private final static String ZEROTIER_ADDRESS = "239.192.10.91";
+    private final static String STATION_ADDRESS = "127.0.0.1";
     //
-    private int socketPort;
-    private String socketIP;
+    private final static int MULTICAST_PORT = 31090;
+    private final static int ZEROTIER_PORT = 31090;
+    private final static int UNICAST_PORT = 30339;
+    private final static int STATION_PORT = 30003;
+    //
+    private String stationIP;
     private String multicastIP;
-    private int multicastPort;
+    private String zerotierIP;
     private String multicastNIC;
+    private String zerotierNIC;
+    private int stationPort;
+    private int multicastPort;
+    private int zerotierPort;
     private int unicastPort;
     private int unicastHostCount;
     private HostID[] unicastHost;
     private long unicastTime;
-    private boolean multicastLog;
+    private long zerotierTime;
     private boolean guienable;
     //
     private Properties Props;
@@ -49,18 +55,21 @@ public final class Config {
         multicastIP = MULTICAST_ADDRESS;
         multicastPort = MULTICAST_PORT;
         //
-        socketIP = SOCKET_ADDRESS;
-        socketPort = SOCKET_PORT;
+        zerotierIP = MULTICAST_ADDRESS;
+        zerotierPort = MULTICAST_PORT;
+        //
+        stationIP = STATION_ADDRESS;
+        stationPort = STATION_PORT;
         //
         unicastPort = UNICAST_PORT;
         unicastHostCount = 0;
         unicastTime = 1000L;
-        multicastLog = false;
+        zerotierTime = 10000L;
         guienable = true;
         Props = null;
         homeName = "";
-        homeLon = -97.0D;
-        homeLat = 35.0D;
+        homeLon = -97.0;
+        homeLat = 35.0;
         homeID = 0L;
         SID = null;
         
@@ -79,6 +88,14 @@ public final class Config {
         }
 
         if (Props != null) {
+            temp = Props.getProperty("zerotier.nicaddress");
+            if (temp == null) {
+                zerotierNIC = "127.0.0.1";
+                System.out.println("zerotier NIC not specified, using Loopback 127.0.0.1");
+            } else {
+                zerotierNIC = temp.trim();
+            }
+
             temp = Props.getProperty("multicast.nicaddress");
             if (temp == null) {
                 multicastNIC = "127.0.0.1";
@@ -87,35 +104,43 @@ public final class Config {
                 multicastNIC = temp.trim();
             }
 
+            temp = Props.getProperty("zerotier.address");
+            if (temp == null) {
+                zerotierIP = ZEROTIER_ADDRESS;
+                System.out.println("zerotier address not set, set to " + ZEROTIER_ADDRESS);
+            } else {
+                zerotierIP = temp.trim();
+            }
+            
             temp = Props.getProperty("multicast.address");
             if (temp == null) {
                 multicastIP = MULTICAST_ADDRESS;
-                System.out.println("socket address not set, set to " + MULTICAST_ADDRESS);
+                System.out.println("multicast address not set, set to " + MULTICAST_ADDRESS);
             } else {
                 multicastIP = temp.trim();
+            }
+
+            temp = Props.getProperty("zerotier.port");
+            if (temp == null) {
+                zerotierPort = ZEROTIER_PORT;
+                System.out.println("zerotier port not set, set to " + String.valueOf(zerotierPort));
+            } else {
+                try {
+                    zerotierPort = Integer.parseInt(temp.trim());
+                } catch (NumberFormatException e) {
+                    zerotierPort = ZEROTIER_PORT;
+                }
             }
 
             temp = Props.getProperty("multicast.port");
             if (temp == null) {
                 multicastPort = MULTICAST_PORT;
-                System.out.println("socket port not set, set to " + String.valueOf(multicastPort));
+                System.out.println("multicast port not set, set to " + String.valueOf(multicastPort));
             } else {
                 try {
                     multicastPort = Integer.parseInt(temp.trim());
                 } catch (NumberFormatException e) {
                     multicastPort = MULTICAST_PORT;
-                }
-            }
-
-            temp = Props.getProperty("multicast.log");
-            if (temp == null) {
-                multicastLog = false;
-                System.out.println("Logging not set, set to false");
-            } else {
-                try {
-                    multicastLog = Boolean.parseBoolean(temp.trim());
-                } catch (Exception e) {
-                    multicastLog = false;
                 }
             }
 
@@ -131,23 +156,23 @@ public final class Config {
                 }
             }
             
-            temp = Props.getProperty("socket.address");
+            temp = Props.getProperty("station.address");
             if (temp == null) {
-                socketIP = SOCKET_ADDRESS;
-                System.out.println("socket address not set, set to " + SOCKET_ADDRESS);
+                stationIP = STATION_ADDRESS;
+                System.out.println("station address not set, set to " + STATION_ADDRESS);
             } else {
-                socketIP = temp.trim();
+                stationIP = temp.trim();
             }
 
-            temp = Props.getProperty("socket.port");
+            temp = Props.getProperty("station.port");
             if (temp == null) {
-                socketPort = SOCKET_PORT;
-                System.out.println("socket port not set, set to " + String.valueOf(socketPort));
+                stationPort = STATION_PORT;
+                System.out.println("station port not set, set to " + String.valueOf(stationPort));
             } else {
                 try {
-                    socketPort = Integer.parseInt(temp.trim());
+                    stationPort = Integer.parseInt(temp.trim());
                 } catch (NumberFormatException e) {
-                    socketPort = SOCKET_PORT;
+                    stationPort = STATION_PORT;
                 }
             }
 
@@ -181,7 +206,7 @@ public final class Config {
                     unicastPort = Integer.parseInt(temp.trim());
                 } catch (NumberFormatException e) {
                     unicastPort = UNICAST_PORT;
-                    System.err.println("server port (" + temp + ") invalid, set to " + String.valueOf(unicastPort));
+                    System.err.println("unicast port (" + temp + ") invalid, set to " + String.valueOf(unicastPort));
                 }
             }
 
@@ -191,16 +216,32 @@ public final class Config {
                     unicastTime = Math.abs(Long.parseLong(temp.trim()));
 
                     if (unicastTime == 0L) {
-                        unicastTime = 1000L;
+                        unicastTime = 10000L;
                     } else {
                         unicastTime *= 1000L;
                     }
                 } catch (NumberFormatException e) {
-                    unicastTime = 1000L;
-                    System.err.println("server time (" + temp + ") invalid, set to 1 second");
+                    unicastTime = 10000L;
+                    System.err.println("unicast time (" + temp + ") invalid, set to 10 seconds");
                 }
             }
 
+            temp = Props.getProperty("zerotier.seconds");
+            if (temp != null) {
+                try {
+                    zerotierTime = Math.abs(Long.parseLong(temp.trim()));
+
+                    if (zerotierTime == 0L) {
+                        zerotierTime = 10000L;
+                    } else {
+                        zerotierTime *= 10000L;
+                    }
+                } catch (NumberFormatException e) {
+                    zerotierTime = 10000L;
+                    System.err.println("zerotier time (" + temp + ") invalid, set to 10 seconds");
+                }
+            }
+            
             temp = Props.getProperty("station.latitude");
             if (temp == null) {
                 homeLat = 0.0D;
@@ -269,14 +310,23 @@ public final class Config {
     }
 
     /**
-     * Method to return the site UTC time in milliseconds
+     * Method to return the site update time in milliseconds
      *
-     * @return a long Representing UTC time in milliseconds
+     * @return a long Representing update time in milliseconds
      */
     public long getUnicastTime() {
         return unicastTime;
     }
 
+    /**
+     * Method to return the zerotier update time in milliseconds
+     *
+     * @return a long Representing zerotier update time in milliseconds
+     */
+    public long getZerotierTime() {
+        return zerotierTime;
+    }
+    
     /**
      * Method to return the number of hosts to transmit UDP packets to
      *
@@ -290,6 +340,10 @@ public final class Config {
         return multicastNIC;
     }
 
+    public String getZerotierNIC() {
+        return zerotierNIC;
+    }
+    
     /**
      * Method to return the configuration multicast UDP port
      *
@@ -300,12 +354,12 @@ public final class Config {
     }
 
     /**
-     * Method to return the configuration logging status
+     * Method to return the configuration zerotier UDP port
      *
-     * @return a boolean Representing logging being requested
+     * @return an integer Representing the zerotier UDP port to transmit on
      */
-    public boolean getMulticastLog() {
-        return multicastLog;
+    public int getZerotierPort() {
+        return zerotierPort;
     }
 
     /**
@@ -327,6 +381,15 @@ public final class Config {
     }
 
     /**
+     * Method to return the configuration zerotier host IP
+     *
+     * @return a string Representing the zerotier host IP
+     */
+    public String getZerotierHost() {
+        return zerotierIP;
+    }
+
+    /**
      * Method to return the configuration unicast UDP port
      *
      * @return an integer Representing the unicast port
@@ -340,8 +403,8 @@ public final class Config {
      *
      * @return an integer Representing the Basestation TCP port
      */
-    public int getSocketPort() {
-        return socketPort;
+    public int getStationPort() {
+        return stationPort;
     }
 
     /**
@@ -355,12 +418,12 @@ public final class Config {
     }
 
     /**
-     * Method to return the Basestation IP or Hostname
+     * Method to return the station IP or Hostname
      *
-     * @return a string Representing the IP or Hostname of the Basestation host
+     * @return a string Representing the IP or Hostname of the station host
      */
-    public String getSocketHost() {
-        return socketIP;
+    public String getStationHost() {
+        return stationIP;
     }
 
     /**

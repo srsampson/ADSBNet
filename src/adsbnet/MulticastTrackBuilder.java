@@ -1,9 +1,8 @@
 /**
  * MulticastTrackBuilder.java
  */
-package adsnet;
+package adsbnet;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -15,30 +14,34 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * This class is a thread that outputs track objects which have been updated to
  * the local area network (LAN).
  *
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
 public final class MulticastTrackBuilder extends Thread {
 
     private final Thread track;
     //
     private final KineticParse process;
-    //
+    private final ZuluMillis zulu;
     private final Config config;
-    //
     private final MulticastSocket msocket;
-    private final BufferedWriter logwriter;
+    private final MulticastSocket zsocket;
+    //
+    private final long zerotierTime;
+    //
     private boolean shutdown;
 
-    public MulticastTrackBuilder(Config c, MulticastSocket ms, KineticParse proc, BufferedWriter log) {
+    public MulticastTrackBuilder(Config c, MulticastSocket ms, MulticastSocket zs, KineticParse proc) {
         this.config = c;
         this.process = proc;
         this.msocket = ms;
-        this.logwriter = log;   // might be null
+        this.zsocket = zs;
+        this.zerotierTime = config.getZerotierTime(); // 10 sec default
+        this.zulu = new ZuluMillis();
 
         track = new Thread(this);
         track.setName("MulticastTrackBuilder");
         track.setPriority(Thread.NORM_PRIORITY);
-        
+
         shutdown = false;
         track.start();
     }
@@ -48,22 +51,18 @@ public final class MulticastTrackBuilder extends Thread {
     }
 
     private void sendLAN(String data) {
-        /*
-         * Send copy to a buffered log file
-         */
-        if (config.getMulticastLog() == true) {
-            if (logwriter != null) {
-                try {
-                    logwriter.write(data);
-                } catch (IOException e) {
-                    System.err.println("MulticastTrackBuilder::send Couldn't write to log file " + e.toString());
-                }
-            }
-        }
-
         try {
             byte[] buffer = data.getBytes("US-ASCII");
             msocket.send(new DatagramPacket(buffer, buffer.length, InetAddress.getByName(config.getMulticastHost()), config.getMulticastPort()));
+        } catch (IOException e) {
+            // Punt
+        }
+    }
+
+    private void sendZerotier(String data) {
+        try {
+            byte[] buffer = data.getBytes("US-ASCII");
+            zsocket.send(new DatagramPacket(buffer, buffer.length, InetAddress.getByName(config.getZerotierHost()), config.getZerotierPort()));
         } catch (IOException e) {
             // Punt
         }
@@ -75,8 +74,12 @@ public final class MulticastTrackBuilder extends Thread {
         CopyOnWriteArrayList<Track> values;
         String acid;
         String trkstr;
+        long now;
+
+        long last = zulu.getUTCTime();
 
         while (shutdown == false) {
+            now = zulu.getUTCTime();
             values = process.getTrackUpdatedHashTable(); // remember, this is only a copy of the track queue
 
             if (values.size() > 0) {
@@ -105,12 +108,17 @@ public final class MulticastTrackBuilder extends Thread {
                             (id.getOnGround() == true) ? "-1" : "0",
                             id.getTrackQuality());
                     sendLAN(trkstr);
-                }
-            }
 
-            try {
-                Thread.sleep(50L);
-            } catch (InterruptedException e) {
+                    if ((now - last) > zerotierTime) {   // 10 second by default
+                        last = now;
+                        sendZerotier(trkstr);
+                    }
+                }
+
+                try {
+                    Thread.sleep(50L);
+                } catch (InterruptedException e) {
+                }
             }
         }
     }

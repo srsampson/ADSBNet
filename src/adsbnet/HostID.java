@@ -1,7 +1,7 @@
 /**
  * HostID.java
  */
-package adsnet;
+package adsbnet;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -9,7 +9,7 @@ import java.net.UnknownHostException;
 /**
  * Class to store remote unicast host information
  * 
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
 public final class HostID {
 

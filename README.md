@@ -2,7 +2,7 @@
 
 This Java track server listens on a TCP port 30003 for Basestation compatible data, and sends target reports over UDP Multicast and Unicast ports to local and remote listeners.
 
-![My image](https://raw.githubusercontent.com/srsampson/ADSNet/master/sample.png)
+![My image](https://raw.githubusercontent.com/srsampson/ADSBNet/master/sample.png)
 
 I've been working with modesdeco2 with an RTL SDR and modesmixer2 with beast-splitter and a Mode-S Beast receiver.
 

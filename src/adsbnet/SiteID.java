@@ -1,7 +1,7 @@
 /**
  * SiteID.java
  */
-package adsnet;
+package adsbnet;
 
 import java.util.Random;
 
@@ -10,7 +10,7 @@ import java.util.Random;
  *
  * <p>Each network participant needs a unique random ID to share tracks
  *
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
 public final class SiteID {
 

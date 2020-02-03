@@ -1,7 +1,7 @@
 /**
  * UnicastTrackBuilder.java
  */
-package adsnet;
+package adsbnet;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * The track and heartbeat are sent over the WAN using UDP IP packets on the
  * configured IP port.
  *
- * @author Steve Sampson, May 2010
+ * @author Steve Sampson, January 2020
  */
 public final class UnicastTrackBuilder extends Thread {
 
@@ -41,9 +41,9 @@ public final class UnicastTrackBuilder extends Thread {
     //
     private HostID[] host;
     private final int hostCount;
-    private int unicastPort;
+    private final int unicastPort;
     private long homeID;
-    private long unicastTime;
+    private final long unicastTime;
     private double homeLat;
     private double homeLon;
     private String homeName;
@@ -60,15 +60,14 @@ public final class UnicastTrackBuilder extends Thread {
         shutdown = false;
 
         this.hostCount = config.getUnicastHostCount();
+        this.unicastTime = config.getUnicastTime(); // 1 sec default
+        this.unicastPort = config.getUnicastPort();
 
         track = new Thread(this);
 
         if (hostCount > 0) {
-            this.unicastTime = 0L;
             this.host = config.getUnicastHosts();
-            this.unicastPort = config.getUnicastPort();
             this.homeID = config.getHomeID();
-            this.unicastTime = config.getUnicastTime(); // 1 sec default
             this.homeLat = config.getHomeLat();
             this.homeLon = config.getHomeLon();
             this.homeName = config.getHomeName();
